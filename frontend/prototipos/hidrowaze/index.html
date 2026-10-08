@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1f2e">
+  <meta name="hidrowize-api-url" content="http://localhost:8000/api/v1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="Ygapé — Visão do Capitão. Calcule rotas fluviais seguras por calado e nível do rio. Protótipo acessível WCAG e e-MAG.">
+  <title>Ygapé · Visão do Capitão — Roteamento Fluvial</title>
+  <link rel="manifest" href="./manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="./styles.css" rel="stylesheet">
+</head>
+<body class="hw-page-bg">
+  <!-- Links de salto e-MAG 1.2 / WCAG 2.4.1 Bypass Blocks -->
+  <a class="hw-skip" href="#conteudo" accesskey="1">Ir para o conteúdo principal [1]</a>
+  <a class="hw-skip" href="#menu-principal" accesskey="2">Ir para o menu principal [2]</a>
+  <a class="hw-skip" href="#formRota" accesskey="3">Ir para o formulário de rota [3]</a>
+
+  <!-- Região de anúncio para leitores de tela -->
+  <div id="announcer" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
+  <div id="announcer-assertive" class="visually-hidden" role="alert" aria-live="assertive" aria-atomic="true"></div>
+
+  <!-- Barra de acessibilidade e-MAG -->
+  <div class="hw-a11y-bar" role="navigation" aria-label="Atalhos de acessibilidade">
+    <div class="container-fluid d-flex flex-wrap justify-content-between align-items-center gap-2 py-1" style="max-width:1180px">
+      <div class="d-flex flex-wrap gap-3">
+        <a href="#conteudo" accesskey="1">Conteúdo [1]</a>
+        <a href="#menu-principal" accesskey="2">Menu [2]</a>
+        <a href="#formRota" accesskey="3">Buscar rota [3]</a>
+        <a href="#rodape" accesskey="4">Rodapé [4]</a>
+      </div>
+      <div class="d-flex align-items-center gap-1">
+        <button type="button" class="btn btn-sm btn-outline-light" id="btnA11yFonte" aria-label="Aumentar tamanho da fonte"><i class="bi bi-type" aria-hidden="true"></i> A+</button>
+        <button type="button" class="btn btn-sm btn-outline-light" id="btnA11yContraste" aria-pressed="false" aria-label="Ativar alto contraste"><i class="bi bi-circle-half" aria-hidden="true"></i> Contraste</button>
+        <a href="./admin.html" class="btn btn-sm btn-outline-light fw-bold"><i class="bi bi-speedometer2 me-1" aria-hidden="true"></i> Visão Admin</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="hw-shell" role="document">
+    <header class="hw-header" role="banner">
+      <div class="hw-header-inner">
+        <div class="d-flex align-items-center justify-content-between gap-2">
+          <div class="d-flex align-items-center gap-2">
+            <div class="hw-logo" aria-hidden="true"><i class="bi bi-water"></i></div>
+            <div>
+              <div class="hw-brand-title" aria-label="Ygapé">Ygapé</div>
+              <div class="hw-brand-sub">Capitão · <span id="capNome">Sessão não iniciada</span></div>
+            </div>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <!-- Navegação desktop visível só em >=992px -->
+            <nav id="menu-principal" class="hw-topnav" role="navigation" aria-label="Menu principal">
+              <a href="./index.html" aria-current="page"><i class="bi bi-compass me-1" aria-hidden="true"></i> Rotas</a>
+              <a href="#sec-mapa"><i class="bi bi-map me-1" aria-hidden="true"></i> Mapa</a>
+              <a href="#tituloHist"><i class="bi bi-clock-history me-1" aria-hidden="true"></i> Histórico</a>
+              <a href="./admin.html"><i class="bi bi-gear me-1" aria-hidden="true"></i> Admin</a>
+            </nav>
+            <span class="hw-pill" id="pillOnline" role="status" aria-live="polite"><i class="bi bi-cloud-check" aria-hidden="true"></i> Online</span>
+            <button id="btnInstalarApp" class="hw-icon-btn" type="button" hidden aria-label="Instalar aplicativo HidroWize" title="Instalar aplicativo">
+              <i class="bi bi-download" aria-hidden="true"></i>
+            </button>
+            <button class="hw-icon-btn" type="button" aria-label="Abrir notificações (2 não lidas)" aria-haspopup="dialog" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNotifs">
+              <i class="bi bi-bell" aria-hidden="true"></i><span class="hw-dot" id="notifDot" aria-hidden="true"></span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Switch mobile + breadcrumb web -->
+        <nav class="hw-role-switch mt-3 d-lg-none" aria-label="Trocar visão">
+          <a href="./index.html" aria-current="page"><i class="bi bi-compass me-1" aria-hidden="true"></i> Capitão</a>
+          <a href="./admin.html"><i class="bi bi-speedometer2 me-1" aria-hidden="true"></i> Admin</a>
+        </nav>
+
+        <nav class="mt-3 d-none d-lg-block" aria-label="Navegação estrutural (breadcrumb)">
+          <ol class="breadcrumb hw-breadcrumb mb-0">
+            <li class="breadcrumb-item"><a href="./index.html" class="text-white">Início</a></li>
+            <li class="breadcrumb-item active text-white" aria-current="page">Planejar rota</li>
+          </ol>
+        </nav>
+
+        <div class="hw-alert mt-3" id="alertaTopo" role="status" aria-live="polite">
+          <i class="bi bi-exclamation-triangle-fill text-warning" aria-hidden="true"></i>
+          <span><strong id="alertCount">0</strong> alertas ativos no trecho · <a href="#resultado">ver detalhes da rota</a></span>
+        </div>
+        <div class="d-flex flex-wrap justify-content-between align-items-center mt-2 gap-2" style="font-size:.82rem;color:rgba(255,255,255,.86)">
+          <span><i class="bi bi-arrow-repeat me-1" aria-hidden="true"></i> Sincronização <strong id="syncTime" class="text-white">pendente</strong></span>
+          <span><i class="bi bi-broadcast me-1" aria-hidden="true"></i> Telemetria ANA · IDW · <abbr title="Web App">PWA</abbr> offline pronto</span>
+        </div>
+      </div>
+    </header>
+
+    <main id="conteudo" class="hw-main" tabindex="-1" role="main" aria-labelledby="tituloPagina">
+      <h1 id="tituloPagina" class="visually-hidden">Ygapé — Planejar rota fluvial segura</h1>
+
+      <div class="hw-layout">
+        <!-- COLUNA 1: FORMULÁRIO -->
+        <section class="hw-card" aria-labelledby="tituloRota">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3 gap-2">
+              <h2 id="tituloRota" class="h5 fw-bold mb-0">Planejar rota fluvial</h2>
+              <span class="badge rounded-pill text-bg-primary"><i class="bi bi-phone me-1" aria-hidden="true"></i> PWA · Offline após 1º acesso</span>
+            </div>
+            <p class="small text-secondary mb-3" id="descRota">Informe origem, destino e dados da embarcação. O cálculo considera profundidade estimada, correnteza e margem de segurança.</p>
+
+            <form id="formRota" novalidate aria-describedby="descRota">
+              <fieldset class="hw-fieldset mb-3">
+                <legend><i class="bi bi-signpost me-1" aria-hidden="true"></i> Trecho</legend>
+
+                <label class="hw-label" for="origem">Início da Rota — origem <span aria-hidden="true" class="text-danger">*</span></label>
+                <div class="input-group mb-1">
+                  <span class="input-group-text bg-white" aria-hidden="true"><i class="bi bi-circle-fill text-success" style="font-size:.6rem"></i></span>
+                  <select id="origem" class="form-select hw-input" required aria-required="true" aria-describedby="err-origem help-origem">
+                    <option value="">Carregue os portos pela API</option>
+                  </select>
+                </div>
+                <div id="err-origem" class="hw-error mt-1" role="alert" aria-live="assertive"></div>
+                <div id="help-origem" class="visually-hidden">Selecione o porto ou localidade de partida, por exemplo Manaus.</div>
+
+                <div class="d-flex justify-content-center my-2">
+                  <button id="btnSwap" class="hw-swap" type="button" aria-label="Inverter origem e destino"><i class="bi bi-arrow-down-up" aria-hidden="true"></i></button>
+                </div>
+
+                <label class="hw-label" for="destino">Final da Rota — destino <span aria-hidden="true" class="text-danger">*</span></label>
+                <div class="input-group mb-1">
+                  <span class="input-group-text bg-white" aria-hidden="true"><i class="bi bi-geo-alt-fill text-danger"></i></span>
+                  <select id="destino" class="form-select hw-input" required aria-required="true" aria-describedby="err-destino help-destino">
+                    <option value="">Carregue os portos pela API</option>
+                  </select>
+                </div>
+                <div id="err-destino" class="hw-error mt-1" role="alert" aria-live="assertive"></div>
+                <div id="help-destino" class="visually-hidden">Selecione o destino, por exemplo Itacoatiara.</div>
+              </fieldset>
+
+              <fieldset class="hw-fieldset mb-3">
+                <legend><i class="bi bi-life-preserver me-1" aria-hidden="true"></i> Embarcação</legend>
+                <div class="row g-3">
+                  <div class="col-12 col-sm-6">
+                    <label class="hw-label" for="calado">Calado <span aria-hidden="true" class="text-danger">*</span> <span class="fw-normal text-secondary">(metros)</span></label>
+                    <div class="input-group">
+                      <span class="input-group-text bg-white" aria-hidden="true">m</span>
+                      <input id="calado" type="number" class="form-control hw-input hw-input-lg" value="1.8" step="0.1" min="0.5" max="6" inputmode="decimal" required aria-required="true" aria-describedby="err-calado help-calado">
+                    </div>
+                    <div id="err-calado" class="hw-error mt-1" role="alert"></div>
+                    <div id="help-calado" class="form-text">Altura do casco abaixo da linha d'água. Ex.: 1,8 m.</div>
+                  </div>
+                  <div class="col-12 col-sm-6">
+                    <label class="hw-label" for="velocidade">Velocidade <span class="fw-normal text-secondary">(km/h)</span></label>
+                    <div class="input-group">
+                      <span class="input-group-text bg-white" aria-hidden="true"><i class="bi bi-speedometer" aria-hidden="true"></i></span>
+                      <input id="velocidade" type="number" class="form-control hw-input hw-input-lg" value="18" step="1" min="6" max="35" inputmode="numeric" aria-describedby="help-vel">
+                    </div>
+                    <div id="help-vel" class="form-text">Velocidade própria. Correnteza média 5,5 km/h é somada.</div>
+                  </div>
+                </div>
+                <div class="hw-help mt-3 d-flex flex-wrap gap-2" role="note" aria-label="Regras de segurança">
+                  <span class="badge text-bg-light border"><i class="bi bi-water me-1" aria-hidden="true"></i> Margem segurança: <strong>+0,50 m</strong></span>
+                  <span class="badge text-bg-light border"><i class="bi bi-moisture me-1" aria-hidden="true"></i> Prof. mínima exigida: <strong id="profMin">2,30 m</strong></span>
+                  <span class="badge text-bg-light border"><i class="bi bi-info-circle me-1" aria-hidden="true"></i> Calado = altura do casco abaixo da linha d'água</span>
+                </div>
+              </fieldset>
+
+              <button id="btnCalcular" class="btn btn-primary hw-btn-primary w-100" type="submit" aria-describedby="help-calcular">
+                <i class="bi bi-signpost-2 me-2" aria-hidden="true"></i> Calcular rota mais eficiente
+              </button>
+              <div id="help-calcular" class="text-center mt-2 small text-secondary">Motor A* — tempo = distância ÷ velocidade líquida · regra RN010/RN011</div>
+            </form>
+          </div>
+        </section>
+
+        <!-- COLUNA 2: RESULTADO -->
+        <div>
+          <section id="resultado" class="hw-card hw-hidden" aria-labelledby="tituloResultado" aria-live="polite" aria-atomic="false">
+            <div class="hw-result-head d-flex justify-content-between align-items-center p-3 gap-2">
+              <div>
+                <h2 id="tituloResultado" class="h6 fw-bold mb-0">Resultado da rota</h2>
+                <div class="fw-semibold" id="resTitulo">MANAUS → ITACOATIARA</div>
+                <div class="small text-secondary" id="resSub">194,3 km · via Solimões/Amazonas</div>
+              </div>
+              <span id="resBadge" class="badge text-bg-success rounded-pill" role="status">Navegável</span>
+            </div>
+            <div class="card-body">
+              <div class="row g-2 mb-3" role="list" aria-label="Indicadores principais">
+                <div class="col-12 col-sm-6" role="listitem">
+                  <div class="hw-kpi hw-kpi--accent h-100">
+                    <div class="hw-kpi-label"><i class="bi bi-clock me-1" aria-hidden="true"></i> Tempo esperado de viagem</div>
+                    <div class="hw-kpi-value" id="resTempo" aria-live="polite">11,2 h</div>
+                    <div class="small text-secondary" id="resTempoDet">a 18 km/h · + correnteza</div>
+                  </div>
+                </div>
+                <div class="col-12 col-sm-6" role="listitem">
+                  <div class="hw-kpi h-100" id="kpiSegWrap">
+                    <div class="hw-kpi-label"><i class="bi bi-shield-check me-1" aria-hidden="true"></i> Nível de segurança da rota</div>
+                    <div class="hw-kpi-value" aria-live="polite"><span id="resSeg">7</span><span class="fw-semibold text-secondary" style="font-size:.95rem">/10</span> <span class="visually-hidden">em uma escala de 1 a 10, onde 1 é o mais baixo/perigoso e 10 é o mais seguro</span></div>
+                    <div class="small fw-bold" id="resSegRotulo">Boa — margem confortável</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Escala 1–10 acessível -->
+              <div class="hw-safety mb-3" role="group" aria-labelledby="labelSegScale">
+                <div class="d-flex justify-content-between align-items-center mb-2 gap-2">
+                  <span id="labelSegScale" class="small fw-bold">Nível de segurança (1 = perigoso · 10 = mais seguro)</span>
+                  <span id="safetyBadge" class="hw-safety-badge text-bg-success" aria-live="polite">7/10</span>
+                </div>
+                <div class="hw-safety-scale" id="safetyScale" role="img" aria-label="Escala de segurança: 7 de 10 preenchidos"></div>
+                <div class="d-flex justify-content-between small mt-1 fw-bold" aria-hidden="true"><span>1</span><span>5</span><span>10</span></div>
+                <p class="hw-safety-desc mt-2 mb-0" id="safetyDesc">Cálculo: folga mínima de profundidade no trecho + nº de trechos críticos + variação de nível (ANA). Quanto maior a sobra de profundidade, maior a nota.</p>
+              </div>
+
+              <div class="row g-2 mb-3">
+                <div class="col-4">
+                  <div class="hw-kpi"><div class="hw-kpi-label">Distância</div><div class="hw-kpi-value" style="font-size:1.15rem" id="resKm">194,3 km</div></div>
+                </div>
+                <div class="col-4">
+                  <div class="hw-kpi"><div class="hw-kpi-label">Trechos críticos</div><div class="hw-kpi-value" style="font-size:1.15rem" id="resCriticos">1</div></div>
+                </div>
+                <div class="col-4">
+                  <div class="hw-kpi"><div class="hw-kpi-label">Prof. mínima</div><div class="hw-kpi-value" style="font-size:1.15rem" id="resProfMin">4,2 m</div></div>
+                </div>
+              </div>
+
+              <figure id="sec-mapa" class="mb-2" aria-labelledby="capMapa">
+                <div id="mapaRota" class="mini-map" role="application" aria-label="Mapa interativo da rota calculada com Leaflet"></div>
+                <figcaption id="capMapa" class="small text-secondary mt-2"><i class="bi bi-map me-1" aria-hidden="true"></i> Mapa interativo (Leaflet) — <a href="#" id="linkVerMapa" class="fw-semibold">Ver no mapa ampliado</a></figcaption>
+              </figure>
+
+              <div class="d-grid gap-2">
+                <button id="btnSalvar" class="btn btn-primary hw-btn-save" type="button" aria-describedby="helpSalvar">
+                  <i class="bi bi-bookmark-check me-2" aria-hidden="true"></i> Salvar Rota
+                </button>
+                <div id="helpSalvar" class="visually-hidden">Salva a rota no dispositivo para acesso offline e sincroniza quando houver conexão.</div>
+                <div class="row g-2">
+                  <div class="col-6"><button class="btn btn-outline-primary hw-btn-ghost w-100" type="button"><i class="bi bi-download me-1" aria-hidden="true"></i> Salvar para offline</button></div>
+                  <div class="col-6"><button class="btn btn-outline-secondary hw-btn-ghost w-100" type="button"><i class="bi bi-share me-1" aria-hidden="true"></i> Compartilhar</button></div>
+                </div>
+              </div>
+
+              <div class="mt-3">
+                <h3 class="h6 fw-bold mb-2">Trechos da rota</h3>
+                <div id="listaTrechos" class="d-flex flex-column gap-2" role="list" aria-label="Trechos detalhados da rota"></div>
+              </div>
+
+              <div class="alert alert-light border small mt-3 mb-0" role="note">
+                <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
+                Integração backend: <code>POST /api/v1/rotas/calcular { origem, destino, calado, velocidade }</code> → <code>{ tempo_h, distancia_km, seguranca_1_10, geojson, trechos }</code>. Offline usa <code>services/roteador.ts (A* local) + Dexie (IndexedDB)</code>.
+              </div>
+            </div>
+          </section>
+
+          <!-- Histórico + Estações (continuam na coluna direita em web) -->
+          <section class="mt-4" aria-labelledby="tituloHist">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h2 id="tituloHist" class="h6 fw-bold mb-0">Rotas salvas</h2>
+              <span class="badge text-bg-light border" id="badgeHist" aria-label="Quantidade de rotas salvas">3</span>
+            </div>
+            <div id="listaHistorico" class="d-flex flex-column gap-2" role="list" aria-label="Histórico de rotas salvas"></div>
+          </section>
+
+          <section class="mt-4" aria-labelledby="tituloEstacoes">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h2 id="tituloEstacoes" class="h6 fw-bold mb-0">Estações do trecho</h2>
+              <button id="btnAtualizar" class="btn btn-link btn-sm p-0 text-decoration-none" type="button"><i class="bi bi-arrow-clockwise me-1" aria-hidden="true"></i>Atualizar</button>
+            </div>
+            <div id="listaEstacoes" class="d-flex flex-column gap-2" role="list" aria-label="Estações hidrométricas do trecho"></div>
+          </section>
+        </div>
+      </div>
+
+      <div class="text-center small mt-4 text-secondary" id="rodape">
+        <i class="bi bi-droplet-half text-primary me-1" aria-hidden="true"></i> Fontes: ANA HidroWeb (telemetria) · BHAE/AHGN (hidrovias) · SWOT/SICFLOW · <a href="./admin.html">Acesso administrativo</a>
+      </div>
+    </main>
+
+    <nav class="hw-bottom-nav" role="navigation" aria-label="Navegação primária mobile">
+      <a href="./index.html" aria-current="page"><i class="bi bi-compass" aria-hidden="true"></i><span>Rotas</span></a>
+      <a href="#sec-mapa"><i class="bi bi-map" aria-hidden="true"></i><span>Mapa</span></a>
+      <a href="#tituloHist"><i class="bi bi-clock-history" aria-hidden="true"></i><span>Histórico</span></a>
+      <a href="./admin.html"><i class="bi bi-gear" aria-hidden="true"></i><span>Admin</span></a>
+    </nav>
+  </div>
+
+  <footer class="container py-3 small text-secondary border-top" style="max-width:1180px" role="contentinfo" aria-label="Rodapé">
+    <div class="d-flex flex-column flex-md-row justify-content-between gap-2">
+      <span>© 2026 Ygapé</span>
+      <span>Teclas de atalho: Alt+1 conteúdo, Alt+2 menu, Alt+3 rota.</span>
+    </div>
+  </footer>
+
+  <!-- Offcanvas notificações: dialog acessível -->
+  <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasNotifs" aria-labelledby="offcanvasNotifsLabel" role="dialog" aria-modal="true">
+    <div class="offcanvas-header">
+      <h2 id="offcanvasNotifsLabel" class="h6 fw-bold mb-0">Notificações</h2>
+      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Fechar notificações"></button>
+    </div>
+    <div class="offcanvas-body">
+      <div id="listaNotifs" class="d-flex flex-column gap-2" role="list"></div>
+      <div class="small text-secondary mt-3">WebSocket <code>/ws</code> + fallback polling (RN027). Ao voltar online, sincronização automática.</div>
+    </div>
+  </div>
+
+  <!-- Toast Salvar Rota: status -->
+  <div class="toast-container position-fixed bottom-0 start-50 translate-middle-x p-3" style="z-index:1080">
+    <div id="toastSalvar" class="toast align-items-center text-bg-success border-0" role="status" aria-live="polite" aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body fw-semibold"><i class="bi bi-check-circle me-2" aria-hidden="true"></i> Rota salva no dispositivo e na conta.</div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Fechar notificação"></button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="../../mapa-hidrovias/hidrovias.js"></script>
+  <script src="../../mapa-hidrovias/hidrovias_profundidade.js"></script>
+  <script src="../../mapa-hidrovias/estacoes.js"></script>
+  <script src="./api.js"></script>
+  <script src="./app.js"></script>
+  <script src="./map.js"></script>
+</body>
+</html>

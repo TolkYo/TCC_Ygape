@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-bs-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ffffff">
+  <title>Ygapé · Visão do Administrador</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link href="./styles.css" rel="stylesheet">
+</head>
+<body style="background:#f5f7fa">
+  <a class="hw-skip" href="#conteudoAdmin" accesskey="1">Ir para o conteúdo principal [1]</a>
+  <a class="hw-skip" href="#navAdmin" accesskey="2">Ir para o menu principal [2]</a>
+  <div id="announcer" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
+
+  <div class="hw-a11y-bar" role="navigation" aria-label="Atalhos de acessibilidade">
+    <div class="container d-flex flex-wrap justify-content-between align-items-center gap-2 py-1" style="max-width:1280px">
+      <div class="d-flex flex-wrap gap-3">
+        <a href="#conteudoAdmin" accesskey="1">Conteúdo [1]</a>
+        <a href="#navAdmin" accesskey="2">Menu [2]</a>
+      </div>
+      <div class="d-flex align-items-center gap-1">
+        <button type="button" class="btn btn-sm btn-outline-light" id="btnA11yFonte" aria-label="Aumentar tamanho da fonte"><i class="bi bi-type" aria-hidden="true"></i> A+</button>
+        <button type="button" class="btn btn-sm btn-outline-light" id="btnA11yContraste" aria-pressed="false" aria-label="Ativar alto contraste"><i class="bi bi-circle-half" aria-hidden="true"></i> Contraste</button>
+        <a href="./index.html" class="btn btn-sm btn-outline-light fw-bold"><i class="bi bi-compass me-1" aria-hidden="true"></i> Visão Capitão</a>
+      </div>
+    </div>
+  </div>
+
+  <header class="hw-admin-header">
+    <nav class="navbar navbar-expand-lg bg-white">
+      <div class="container" style="max-width:1280px">
+        <a class="navbar-brand d-flex align-items-center gap-2" href="./index.html">
+          <span style="width:36px;height:36px;display:grid;place-items:center;border-radius:10px;background:linear-gradient(135deg,#0b1f2e,#0a5270);color:#4cc2ff"><i class="bi bi-water"></i></span>
+          <span class="fw-bold">Ygapé</span>
+          <span class="badge text-bg-dark rounded-pill">Admin</span>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navAdmin"><span class="navbar-toggler-icon"></span></button>
+        <div class="collapse navbar-collapse" id="navAdmin">
+          <ul class="navbar-nav mx-auto">
+            <li class="nav-item"><a class="nav-link" href="#usuarios">Usuários</a></li>
+            <li class="nav-item"><a class="nav-link" href="#navegabilidade">Navegabilidade</a></li>
+            <li class="nav-item"><a class="nav-link" href="#estacoesAdmin">Estações</a></li>
+          </ul>
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge text-bg-light border"><i class="bi bi-person-gear me-1"></i> Sessão não iniciada</span>
+          </div>
+        </div>
+      </div>
+    </nav>
+    <nav class="container d-none d-lg-block py-2" style="max-width:1280px" aria-label="Navegação estrutural (breadcrumb)">
+      <ol class="breadcrumb hw-breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="./index.html" class="text-dark text-decoration-underline">Início</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Visão do Administrador — Dashboard</li>
+      </ol>
+    </nav>
+  </header>
+
+  <main id="conteudoAdmin" class="container py-4" style="max-width:1280px" tabindex="-1">
+    <div class="d-flex flex-column flex-md-row justify-content-between gap-2 mb-4">
+      <div>
+        <h1 class="h4 fw-bold mb-1">Dashboard Gerencial</h1>
+        <p class="text-secondary mb-0">Painel de controle operacional — sem apelo comercial, só dados de navegação.</p>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge text-bg-light border"><i class="bi bi-clock-history me-1"></i> Atualizado <strong id="adminSync">—</strong></span>
+        <button class="btn btn-primary btn-sm" type="button" id="btnColeta"><i class="bi bi-arrow-repeat me-1"></i> Forçar coleta ANA</button>
+      </div>
+    </div>
+
+    <!-- KPIs + Condições de Navegabilidade -->
+    <section id="navegabilidade" class="mb-4">
+      <h2 class="h6 fw-bold mb-3"><i class="bi bi-water text-primary me-1"></i> Condições de navegabilidade — trecho Manaus ↔ Itacoatiara</h2>
+      <div class="row g-3">
+        <div class="col-12 col-md-6 col-xl-3">
+          <article class="hw-kpi-admin p-3 h-100">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div class="kpi-icon bg-primary bg-opacity-10 text-primary"><i class="bi bi-moisture"></i></div>
+              <span class="badge text-bg-success">Navegável</span>
+            </div>
+            <div class="small text-secondary fw-semibold text-uppercase" style="letter-spacing:.05em">Nível atual da água</div>
+            <div class="fs-3 fw-bold" id="kpiNivel">—</div>
+            <div class="small text-secondary">Aguardando dados da API</div>
+            <div class="hw-gauge mt-2"><div id="gaugeNivel" class="hw-gauge-fill" style="width:68%;background:linear-gradient(90deg,#3a6ea5,#5b9bd5)"></div></div>
+            <div class="d-flex justify-content-between small mt-1 text-secondary"><span>Mín. hist. 21,0 m</span><span>Δ 24h −2 cm</span></div>
+          </article>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-3">
+          <article class="hw-kpi-admin p-3 h-100">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div class="kpi-icon bg-info bg-opacity-10 text-info"><i class="bi bi-rulers"></i></div>
+              <span class="badge text-bg-warning">Atenção</span>
+            </div>
+            <div class="small text-secondary fw-semibold text-uppercase" style="letter-spacing:.05em">Calado médio suportado</div>
+            <div class="fs-3 fw-bold" id="kpiCalado">—</div>
+            <div class="small text-secondary">Aguardando profundidade calculada</div>
+            <div class="hw-gauge mt-2"><div class="hw-gauge-fill" style="width:62%;background:linear-gradient(90deg,#d19a2f,#f0c36a)"></div></div>
+            <div class="small text-secondary mt-1">Sem dados de trecho carregados</div>
+          </article>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-3">
+          <article class="hw-kpi-admin p-3 h-100">
+            <div class="kpi-icon bg-success bg-opacity-10 text-success mb-2"><i class="bi bi-speedometer"></i></div>
+            <div class="small text-secondary fw-semibold text-uppercase" style="letter-spacing:.05em">Extensão monitorada</div>
+            <div class="fs-3 fw-bold">—</div>
+            <div class="small text-secondary">Aguardando rota calculada</div>
+          </article>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-3">
+          <article class="hw-kpi-admin p-3 h-100">
+            <div class="kpi-icon bg-secondary bg-opacity-10 text-secondary mb-2"><i class="bi bi-broadcast"></i></div>
+            <div class="small text-secondary fw-semibold text-uppercase" style="letter-spacing:.05em">Telemetria ANA</div>
+            <div class="fs-3 fw-bold">—</div>
+            <div class="small text-secondary">Aguardando leitura das estações</div>
+            <div class="small mt-2"><span class="badge text-bg-light border">1 timeout</span> <span class="badge text-bg-light border">WebSocket ativo</span></div>
+          </article>
+        </div>
+      </div>
+
+      <!-- Explicação visual do Calado -->
+      <div class="row g-3 mt-1">
+        <div class="col-12 col-xl-7">
+          <article class="card h-100" style="border-radius:14px">
+            <div class="card-body">
+              <h3 class="h6 fw-bold mb-1"><i class="bi bi-life-preserver text-primary me-1"></i> O que é Calado? (explicação visual)</h3>
+              <p class="small text-secondary mb-3">Calado é a <strong>altura do casco abaixo da linha d'água</strong>. Quanto maior o calado, mais fundo o rio precisa estar. Sempre exigimos <strong>+0,50 m de folga</strong>.</p>
+              <div class="hw-draft">
+                <svg viewBox="0 0 560 220" role="img" aria-label="Diagrama de calado: barco, linha d'água e profundidade">
+                  <!-- água -->
+                  <rect x="0" y="108" width="560" height="112" rx="12" fill="#d9eef5" stroke="#bcd8e6"/>
+                  <text x="18" y="130" font-size="11" fill="#3a6ea5" font-weight="800">ÁGUA</text>
+                  <!-- linha d'água -->
+                  <line x1="0" y1="108" x2="560" y2="108" stroke="#3a6ea5" stroke-width="3" stroke-dasharray="10 6"/>
+                  <text x="18" y="104" font-size="11" fill="#0b1f2e" font-weight="800">LINHA D'ÁGUA</text>
+                  <!-- barco -->
+                  <path d="M 140 108 L 420 108 L 390 72 L 170 72 Z" fill="#0b1f2e" stroke="#0b1f2e"/>
+                  <rect x="220" y="38" width="120" height="34" rx="6" fill="#fff" stroke="#0b1f2e"/>
+                  <text x="280" y="60" text-anchor="middle" font-size="11" fill="#0b1f2e" font-weight="800">BARCO</text>
+                  <!-- calado -->
+                  <line x1="300" y1="108" x2="300" y2="172" stroke="#c1554d" stroke-width="3"/>
+                  <polygon points="296,172 304,172 300,180" fill="#c1554d"/>
+                  <polygon points="296,108 304,108 300,100" fill="#c1554d"/>
+                  <rect x="312" y="128" width="92" height="22" rx="8" fill="#c1554d"/>
+                  <text x="358" y="143" text-anchor="middle" font-size="11" fill="#fff" font-weight="800">CALADO 1,8 m</text>
+                  <!-- folga -->
+                  <line x1="430" y1="172" x2="430" y2="195" stroke="#d19a2f" stroke-width="3" stroke-dasharray="6 4"/>
+                  <rect x="438" y="174" width="86" height="18" rx="8" fill="#fff7e6" stroke="#f0c36a"/>
+                  <text x="481" y="186" text-anchor="middle" font-size="10" fill="#8a6d00" font-weight="800">+0,50 m folga</text>
+                  <!-- profundidade -->
+                  <line x1="90" y1="72" x2="90" y2="205" stroke="#3a6ea5" stroke-width="2"/>
+                  <polygon points="86,205 94,205 90,213" fill="#3a6ea5"/>
+                  <polygon points="86,72 94,72 90,64" fill="#3a6ea5"/>
+                  <text x="102" y="148" font-size="11" fill="#0b1f2e" font-weight="800">Profundidade = nível − cota de fundo</text>
+                  <text x="102" y="164" font-size="10" fill="#6b7a8c" font-weight="600">Mínima exigida aqui = 2,30 m</text>
+                </svg>
+                <div class="d-flex flex-wrap gap-2 mt-3 small">
+                  <span><i class="hw-legend-dot" style="background:#c1554d"></i> Calado (casco submerso)</span>
+                  <span><i class="hw-legend-dot" style="background:#d9eef5;border:1px solid #bcd8e6"></i> Água / profundidade</span>
+                  <span><i class="hw-legend-dot" style="background:#fff7e6;border:1px solid #f0c36a"></i> Folga de segurança 0,50 m</span>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+        <div class="col-12 col-xl-5">
+          <article class="card h-100" style="border-radius:14px">
+            <div class="card-body">
+              <h3 class="h6 fw-bold">Nível vs. histórico (Manaus)</h3>
+              <div style="position:relative;height:180px"><canvas id="chartNivelAdmin" aria-label="Gráfico nível da água"></canvas></div>
+              <div class="small text-secondary mt-2">Série das últimas 9 leituras (00h–16h). Queda de 8 cm no dia — atenção em Jatuarana (−12 cm/6h).</div>
+              <div class="d-flex gap-2 mt-3">
+                <span class="badge text-bg-light border">Min hist.: 21,00 m</span>
+                <span class="badge text-bg-light border">Média: 24,80 m</span>
+                <span class="badge text-bg-light border">Atual: —</span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Gestão de Usuários -->
+    <section id="usuarios" class="mb-4">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <h2 class="h6 fw-bold mb-0"><i class="bi bi-people text-primary me-1"></i> Gestão de Usuários <span id="badgeUsuarios" class="badge text-bg-primary rounded-pill">4</span></h2>
+        <div class="d-flex gap-2 hw-admin-filters">
+          <input id="buscaUsuarios" type="search" class="form-control form-control-sm" placeholder="Buscar nome ou e-mail…" style="min-width:220px">
+          <select id="filtroPapel" class="form-select form-select-sm" style="width:auto">
+            <option value="todos">Todos os papéis</option>
+            <option value="piloto">Piloto</option>
+            <option value="admin">Admin</option>
+          </select>
+          <button class="btn btn-primary btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#modalNovoUsuario"><i class="bi bi-person-plus me-1"></i> Novo usuário</button>
+        </div>
+      </div>
+
+      <div class="card" style="border-radius:14px">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle table-hw mb-0">
+            <thead>
+              <tr>
+                <th>Usuário</th>
+                <th>Papel</th>
+                <th class="d-none d-md-table-cell">E-mail</th>
+                <th>Status</th>
+                <th class="d-none d-lg-table-cell">Último acesso</th>
+                <th class="text-end">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyUsuarios"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="small text-secondary mt-2"><i class="bi bi-shield-lock me-1"></i> Controle via <code>requireRole('admin')</code> · JWT · <code>RF002/RF003</code>. Usuário desativado recebe 401 no login.</div>
+    </section>
+
+    <!-- Tabela de condições por estação -->
+    <section id="estacoesAdmin" class="mb-4">
+      <h2 class="h6 fw-bold mb-3"><i class="bi bi-geo-alt text-primary me-1"></i> Condições por estação (profundidade estimada)</h2>
+      <div class="card" style="border-radius:14px">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle table-hw mb-0">
+            <thead>
+              <tr>
+                <th>Estação</th>
+                <th class="text-end">Nível atual</th>
+                <th class="d-none d-md-table-cell">Δ 24h</th>
+                <th class="d-none d-lg-table-cell">Cota fundo (IDW/ML)</th>
+                <th class="text-end">Profundidade</th>
+                <th>Navegabilidade</th>
+                <th class="d-none d-xl-table-cell">Calado máx.</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyEstacoes"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="small text-secondary mt-2">Profundidade = nível atual − cota de fundo (IDW/SICFLOW). Regra <code>RN010: transitável se profundidade ≥ calado + 0,50 m</code>.</div>
+    </section>
+
+    <footer class="small text-secondary border-top pt-3 d-flex flex-wrap justify-content-between gap-2">
+      <span>© 2026 Ygapé</span>
+    </footer>
+  </main>
+
+  <!-- Modal novo usuário -->
+  <div class="modal fade" id="modalNovoUsuario" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="border-radius:16px">
+        <div class="modal-header">
+          <h3 class="modal-title h6 fw-bold">Cadastrar usuário</h3>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <form id="formNovoUsuario">
+          <div class="modal-body">
+            <div class="mb-3"><label class="form-label small fw-semibold">Nome</label><input class="form-control" required placeholder="Ex: Ana Navegante"></div>
+            <div class="mb-3"><label class="form-label small fw-semibold">E-mail</label><input type="email" class="form-control" required placeholder="ana@exemplo.com"></div>
+            <div class="mb-3"><label class="form-label small fw-semibold">Papel</label><select class="form-select"><option value="piloto">Piloto</option><option value="admin">Admin</option></select></div>
+            <div class="small text-secondary">Ao salvar, o backend cria o usuário com JWT (RF002). Integração: <code>POST /api/v1/usuarios</code>.</div>
+          </div>
+          <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button type="submit" class="btn btn-primary">Salvar</button></div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" integrity="sha384-9nhczxUqK87bcKHh20fSQcTGD4qq5GhayNYSYWqwBkINBhOfQLg/P5HG5lF1urn4" crossorigin="anonymous"></script>
+  <script src="./api.js"></script>
+  <script>
+  (function(){
+    const $ = s => document.querySelector(s);
+    const state = { usuarios: [], estacoes: [], serieNivel: { rotulos: [], manaus: [], itacoatiara: [] } };
+    // Usuários
+    function renderUsuarios(){
+      const q = ($('#buscaUsuarios').value||'').toLowerCase();
+      const papel = $('#filtroPapel').value;
+      let lista = state.usuarios.filter(u=>{
+        if(papel!=='todos' && u.papel!==papel) return false;
+        if(q && !(u.nome.toLowerCase().includes(q) || u.email.toLowerCase().includes(q))) return false;
+        return true;
+      });
+      $('#badgeUsuarios').textContent = lista.length;
+      $('#tbodyUsuarios').innerHTML = lista.map(u=>`
+        <tr>
+          <td><div class="hw-station">${u.nome}</div><div class="hw-code text-secondary">#${u.id}</div></td>
+          <td><span class="badge ${u.papel==='admin'?'text-bg-dark':'text-bg-primary'} hw-chip">${u.papel}</span></td>
+          <td class="d-none d-md-table-cell small">${u.email}</td>
+          <td>${u.ativo?'<span class="badge text-bg-success hw-chip">Ativo</span>':'<span class="badge text-bg-secondary hw-chip">Desativado</span>'}</td>
+          <td class="d-none d-lg-table-cell small text-secondary">—</td>
+          <td class="text-end">
+            <div class="form-check form-switch d-inline-block me-2" style="vertical-align:middle">
+              <input class="form-check-input" type="checkbox" ${u.ativo?'checked':''} aria-label="Ativar usuário">
+            </div>
+            <button class="btn btn-outline-secondary btn-sm">Editar</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+    $('#buscaUsuarios').addEventListener('input', renderUsuarios);
+    $('#filtroPapel').addEventListener('change', renderUsuarios);
+    renderUsuarios();
+
+    async function carregarUsuariosDaApi(){
+      if(!window.HidroWizeApi || !window.HidroWizeApi.hasSession()) return;
+      try{
+        const data=await window.HidroWizeApi.listarUsuarios();
+        state.usuarios=(data.items||data||[]).map(u=>({ id:u.id, nome:u.nome, email:u.email, papel:u.papel, ativo:u.ativo!==false }));
+        renderUsuarios();
+      }catch(_){ /* mantém os dados demonstrativos quando a API falhar */ }
+    }
+    carregarUsuariosDaApi();
+
+    // Estações admin
+    function statusNav(prof, caladoRef){
+      const folga = prof - (caladoRef+0.5);
+      if(folga >= 1.5) return ['NAVEGÁVEL','text-bg-success'];
+      if(folga >= 0.3) return ['RESTRITO','text-bg-warning'];
+      return ['CRÍTICO','text-bg-danger'];
+    }
+    const cotaFundo = {};
+    $('#tbodyEstacoes').innerHTML = state.estacoes.map(e=>{
+      const nivelM = e.nivelCm/100;
+      const fundo = cotaFundo[e.codigo] ?? 6.0;
+      const prof = +(nivelM - fundo).toFixed(2);
+      const maxCalado = +(prof - 0.5).toFixed(2);
+      const [rot,cls] = statusNav(prof, 2.5);
+      const delta = e.codigo==='15030000'?'-12 cm': e.codigo==='14990000'?'-2 cm':'+1 cm';
+      const deltaCls = delta.includes('-')?'text-danger':'text-success';
+      return `<tr>
+        <td><div class="hw-station">${e.nome}</div><div class="hw-code text-secondary">${e.codigo} · ${e.rio}</div></td>
+        <td class="text-end fw-bold">${nivelM.toFixed(2)} m</td>
+        <td class="d-none d-md-table-cell ${deltaCls} fw-semibold">${delta}</td>
+        <td class="d-none d-lg-table-cell">${fundo.toFixed(2)} m</td>
+        <td class="text-end fw-bold">${prof.toFixed(2)} m</td>
+        <td><span class="badge ${cls} hw-chip">${rot}</span></td>
+        <td class="d-none d-xl-table-cell">${maxCalado>0?maxCalado.toFixed(2)+' m':'—'}</td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="7" class="text-center text-secondary py-4">Nenhuma estação carregada pela API.</td></tr>';
+
+    // Chart nível
+    const ctx = document.getElementById('chartNivelAdmin');
+    if(ctx && window.Chart){
+      new Chart(ctx,{
+        type:'line',
+        data:{
+          labels:state.serieNivel.rotulos,
+          datasets:[
+            {label:'Manaus (m)', data:state.serieNivel.manaus.map(v=>v/100), borderColor:'#3a6ea5', backgroundColor:'rgba(58,110,165,.12)', tension:.35, fill:true, borderWidth:2, pointRadius:0},
+            {label:'Itacoatiara (m)', data:state.serieNivel.itacoatiara.map(v=>v/100), borderColor:'#1d8a5a', backgroundColor:'rgba(29,138,90,.08)', tension:.35, fill:true, borderWidth:2, pointRadius:0}
+          ]
+        },
+        options:{
+          responsive:true, maintainAspectRatio:false,
+          plugins:{legend:{position:'bottom',labels:{boxWidth:12,usePointStyle:true}}},
+          scales:{
+            y:{grid:{color:'rgba(100,116,139,.12)'}, ticks:{callback:v=>v+' m'}},
+            x:{grid:{display:false}}
+          }
+        }
+      });
+    }
+    $('#btnColeta').addEventListener('click', async function(){
+      const b=this; b.disabled=true; b.innerHTML='<span class="spinner-border spinner-border-sm me-1"></span> Coletando…';
+      let coletaFalhou=false;
+      if(window.HidroWizeApi && window.HidroWizeApi.hasSession()){
+        try { await window.HidroWizeApi.coletarNiveis({estacoes:[]}); }
+        catch(_) { coletaFalhou=true; b.innerHTML='<i class="bi bi-exclamation-triangle me-1"></i> API indisponível'; }
+      }
+      setTimeout(()=>{ b.disabled=false; if(!coletaFalhou) b.innerHTML='<i class="bi bi-check2 me-1"></i> Coleta ok'; setTimeout(()=> b.innerHTML='<i class="bi bi-arrow-repeat me-1"></i> Forçar coleta ANA',1500)},1200);
+    });
+    document.getElementById('formNovoUsuario').addEventListener('submit',e=>{
+      e.preventDefault();
+      const m=bootstrap.Modal.getInstance(document.getElementById('modalNovoUsuario'));
+      if(m) m.hide();
+    });
+
+    // Acessibilidade: fonte A+
+    let fontStep = 0;
+    const btnFont = document.getElementById('btnA11yFonte');
+    if(btnFont){
+      btnFont.addEventListener('click', function(){
+        fontStep = (fontStep + 1) % 3;
+        document.documentElement.style.fontSize = fontStep===0?'': fontStep===1?'17px':'19px';
+        const ann = document.getElementById('announcer');
+        if(ann) ann.textContent = fontStep===0?'Tamanho normal': fontStep===1?'Fonte aumentada':'Fonte máxima';
+        this.setAttribute('aria-pressed', fontStep>0);
+      });
+    }
+    // Acessibilidade: alto contraste
+    const btnContraste = document.getElementById('btnA11yContraste');
+    if(btnContraste){
+      btnContraste.addEventListener('click', function(){
+        document.documentElement.classList.toggle('hw-contrast');
+        const on = document.documentElement.classList.contains('hw-contrast');
+        this.setAttribute('aria-pressed', on);
+        const ann = document.getElementById('announcer');
+        if(ann) ann.textContent = on?'Alto contraste ativado':'Alto contraste desativado';
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

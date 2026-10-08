@@ -1,0 +1,216 @@
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:w="urn:schemas-microsoft-com:office:word"
+      xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Documentacao Frontend Ygape</title>
+<!--[if gte mso 9]>
+<xml>
+ <w:WordDocument>
+  <w:View>Print</w:View>
+  <w:Zoom>100</w:Zoom>
+  <w:DoNotOptimizeForBrowser/>
+ </w:WordDocument>
+</xml>
+<![endif]-->
+<style>
+ <!--
+ @page Section1 {
+   size:595.3pt 841.9pt;
+   margin:85.05pt 56.7pt 56.7pt 85.05pt;
+   mso-header-margin:42.55pt;
+   mso-footer-margin:42.55pt;
+   mso-paper-source:0;
+ }
+ div.Section1 { page:Section1; }
+
+ body { font-family:"Times New Roman"; font-size:12pt; line-height:150%; }
+
+ p { margin:0pt 0pt 6pt 0pt; text-align:justify; text-indent:1.25cm; line-height:150%; }
+
+ p.semrecuo { text-indent:0pt; }
+ p.citacao { text-indent:4.0cm; font-size:11pt; line-height:150%; }
+
+ h1 { font-family:"Times New Roman"; font-size:12pt; font-weight:bold; text-transform:uppercase;
+      text-align:left; margin:14pt 0pt 6pt 0pt; line-height:150%; }
+ h2 { font-family:"Times New Roman"; font-size:12pt; font-weight:bold;
+      text-align:left; margin:12pt 0pt 4pt 0pt; line-height:150%; }
+
+ table { border-collapse:collapse; margin-left:auto; margin-right:auto; font-size:11pt; }
+ th, td { border:1pt solid #000000; padding:3pt 6pt; text-align:left; line-height:130%; }
+ th { background:#EEEEEE; font-weight:bold; }
+ -->
+</style>
+</head>
+<body>
+
+<div class="Section1">
+
+<h1>1&nbsp;&nbsp;INTRODUÇÃO</h1>
+
+<p>Este documento descreve como o protótipo de frontend do sistema Ygapé — integrante do
+projeto HidroWize, voltado ao roteamento fluvial dinâmico da bacia amazônica — se adequa às
+três dimensões centrais de qualidade de interface: experiência do usuário e interface
+(UX/UI), responsividade e inclusividade. O conteúdo abrange as duas visões do protótipo, a
+Visão Capitão (<code>index.html</code>) e a Visão Administrador (<code>admin.html</code>),
+além dos estilos (<code>styles.css</code>) e dos comportamentos em JavaScript
+(<code>app.js</code> e <code>map.js</code>).</p>
+
+<p>O foco é demonstrar, de forma concreta, as decisões de projeto que tornam a interface
+compreensível, adaptável a diferentes dispositivos e utilizável por pessoas com deficiência,
+em conformidade com as diretrizes WCAG 2.1 AA e com o Modelo de Acessibilidade em Governo
+Eletrônico (e-MAG).</p>
+
+<h1>2&nbsp;&nbsp;ADEQUAÇÃO AO UX/UI</h1>
+
+<h2>2.1&nbsp;&nbsp;Sistema visual e consistência</h2>
+
+<p>A interface adota um sistema visual próprio, definido por meio de variáveis CSS
+(<code>:root</code>) que centralizam a paleta de cores, os raios de arredondamento e os tons
+de feedback. O objetivo é manter consistência entre as duas visões e facilitar futuras
+manutenções. A Tabela 1 apresenta as principais variáveis e seu papel na experiência.</p>
+
+<p class="semrecuo" style="text-align:center;"><b>Tabela 1</b> — Principais variáveis do sistema visual.</p>
+
+<table>
+ <tr><th>Variável</th><th>Papel na UX</th></tr>
+ <tr><td>--hw-navy / --hw-navy-2</td><td>identidade do cabeçalho (gradiente azul-escuro)</td></tr>
+ <tr><td>--hw-primary</td><td>cor de ação (botões e destaques)</td></tr>
+ <tr><td>--hw-success / --hw-warning / --hw-danger</td><td>semântica de status (transitável, restrito, crítico)</td></tr>
+ <tr><td>--hw-muted</td><td>textos secundários de baixa hierarquia</td></tr>
+ <tr><td>--hw-radius / --hw-radius-lg</td><td>padronização de cantos arredondados</td></tr>
+ <tr><td>--hw-focus</td><td>cor do contorno de foco visível</td></tr>
+</table>
+
+<p>O uso consistente de ícones (Bootstrap Icons) associados às ações — como bússola para
+rotas, mapa para visualização e relógio para histórico — reforça o reconhecimento rápido da
+funcionalidade, reduzindo a carga cognitiva do usuário.</p>
+
+<h2>2.2&nbsp;&nbsp;Hierarquia e legibilidade</h2>
+
+<p>A tipografia emprega a família Inter, com pesos que variam de 500 a 900, para diferenciar
+títulos, rótulos e valores. Os valores mais relevantes ao piloto, como tempo esperado de
+viagem e nível de segurança, são destacados em fonte maior e mais pesada (classe
+<code>hw-kpi-value</code>), enquanto os rótulos ficam em caixa-alta reduzida
+(<code>hw-kpi-label</code>). Essa distinção orienta o olhar para as informações de maior
+importância.</p>
+
+<h2>2.3&nbsp;&nbsp;Feedback e estados</h2>
+
+<p>O protótipo comunica o estado do sistema ao usuário em todos os pontos de interação. Ao
+calcular uma rota, o botão muda para um estado de carregamento com indicador giratório e o
+resultado é anunciado. Ao salvar, um toast confirma a ação. Os trechos críticos recebem
+distinção visual por cor (verde, amarelo e vermelho), e o nível de segurança é apresentado em
+uma escala visual de 1 a 10 acompanhada de descrição textual, permitindo interpretação
+imediata do risco.</p>
+
+<h2>2.4&nbsp;&nbsp;Explicação visual do calado</h2>
+
+<p>A Visão Administrador inclui um diagrama em SVG que explica o conceito de calado de forma
+ilustrada, mostrando o barco, a linha d&#39;água, o casco submerso e a folga de segurança de
+0,50 m. Essa representação reduz a necessidade de conhecimento técnico prévio e torna o
+conceito acessível a usuários não especialistas.</p>
+
+<h1>3&nbsp;&nbsp;ADEQUAÇÃO À RESPONSIVIDADE</h1>
+
+<h2>3.1&nbsp;&nbsp;Abordagem mobile-first</h2>
+
+<p>O layout é construído com a abordagem mobile-first: o estilo base é desenhado para telas
+pequenas e os aprimoramentos são adicionados progressivamente por meio de media queries. A
+navegação primária em dispositivos móveis é uma barra inferior fixa (<code>hw-bottom-nav</code>),
+que mantém as principais ações ao alcance do polegar, respeitando a área segura de telas com
+recorte (safe-area).</p>
+
+<h2>2.2&nbsp;&nbsp;Pontos de quebra e reorganização</h2>
+
+<p>A Tabela 2 resume os pontos de quebra adotados e as mudanças de layout correspondentes.</p>
+
+<p class="semrecuo" style="text-align:center;"><b>Tabela 2</b> — Pontos de quebra e comportamentos.</p>
+
+<table>
+ <tr><th>Largura</th><th>Comportamento</th></tr>
+ <tr><td>menos de 768 px</td><td>colunas empilhadas, cards compactos</td></tr>
+ <tr><td>768 px ou mais</td><td>aumento de espaçamento e da altura do mapa</td></tr>
+ <tr><td>992 px ou mais</td><td>barra inferior oculta; navegação superior visível; layout em duas colunas (formulário + resultado)</td></tr>
+ <tr><td>1280 px ou mais</td><td>coluna do formulário ampliada e espaçamento maior</td></tr>
+</table>
+
+<p>No desktop, a navegação passa de barra inferior para menu superior (<code>hw-topnav</code>) e
+para um breadcrumb que indica a posição do usuário na aplicação. A Visão Administrador adota o
+sistema de grade do Bootstrap, reorganizando os indicadores de navegabilidade de quatro
+colunas (em telas largas) para uma única coluna em telas pequenas.</p>
+
+<h2>3.3&nbsp;&nbsp;Tabelas adaptáveis</h2>
+
+<p>As tabelas administrativas escondem colunas de menor prioridade conforme o espaço
+disponível, por meio de classes responsivas como <code>d-none d-md-table-cell</code>. Dessa
+forma, apenas as informações essenciais permanecem visíveis em telas pequenas, evitando
+rolagem horizontal e preservando a legibilidade.</p>
+
+<h2>3.4&nbsp;&nbsp;Mapa responsivo</h2>
+
+<p>O mapa de rotas ajusta a altura conforme o dispositivo — 280 px em celular, 360 px em
+tablet e 420 px em desktop —, e a inicialização é preguiçosa (<code>ensureInit</code>), de modo
+que o mapa só é carregado quando o resultado da rota se torna visível, preservando desempenho
+em dispositivos com menos recursos.</p>
+
+<h1>4&nbsp;&nbsp;ADEQUAÇÃO À INCLUSIVIDADE</h1>
+
+<h2>4.1&nbsp;&nbsp;Navegação por teclado e links de salto</h2>
+
+<p>O protótipo oferece links de salto com teclas de acesso (<code>accesskey</code> 1 a 4) que
+permitem ir diretamente ao conteúdo, ao menu, ao formulário de rota e ao rodapé, além de uma
+barra de acessibilidade visível no topo. Todos os elementos interativos possuem contorno de
+foco visível de 3 px em amarelo (<code>--hw-focus</code>), garantindo a identificação do
+elemento ativo durante a navegação por teclado.</p>
+
+<h2>4.2&nbsp;&nbsp;Anúncios para leitores de tela</h2>
+
+<p>São utilizadas regiões ARIA live — uma polida (<code>announcer</code>) e outra assertiva
+(<code>announcer-assertive</code>) — para comunicar mudanças dinâmicas, como a conclusão do
+cálculo da rota, a inversão de origem e destino e as alterações de acessibilidade. Isso
+garante que usuários de leitor de tela sejam informados sem precisar redescobrir a página.</p>
+
+<h2>4.3&nbsp;&nbsp;Alto contraste e tamanho de fonte</h2>
+
+<p>A interface disponibiliza dois controles de acessibilidade: um para ativar o modo de alto
+contraste e outro para aumentar progressivamente o tamanho da fonte (16, 18 e 20 px). Ambas as
+preferências são persistidas no armazenamento local, de modo que o usuário não precise
+reconfigurá-las a cada acesso. O modo de alto contraste redefine as cores do tema por meio da
+classe <code>hw-contrast</code>.</p>
+
+<h2>4.4&nbsp;&nbsp;Formulários acessíveis</h2>
+
+<p>Os campos do formulário de rota possuem rótulos associados, texto de ajuda e mensagens de
+erro anunciadas com <code>role=&quot;alert&quot;</code>. Na validação, os campos inválidos recebem
+<code>aria-invalid</code> e o foco é movido automaticamente para o primeiro campo com erro,
+facilitando a correção. As faixas válidas de calado e velocidade são comunicadas tanto pelo
+atributo de entrada quanto pelo texto auxiliar.</p>
+
+<h2>4.5&nbsp;&nbsp;Respeito a preferências de movimento</h2>
+
+<p>As animações, transições e a rolagem suave são desativadas quando o usuário indica a
+preferência de movimento reduzido no sistema operacional, por meio da media query
+<code>prefers-reduced-motion</code>. Isso evita desconforto a pessoas sensíveis a movimento.</p>
+
+<h2>4.6&nbsp;&nbsp;Conformidade com padrões</h2>
+
+<p>O conjunto de recursos descrito está alinhado às diretrizes WCAG 2.1 AA, abrangendo
+perceptibilidade (contraste e texto alternativo), operabilidade (navegação por teclado e foco
+visível), compreensibilidade (linguagem clara e feedback) e robustez (marcação semântica e
+ARIA). O protótipo também segue o e-MAG ao fornecer atalhos de acesso e controles de
+contraste e fonte, característicos dos sítios governamentais brasileiros.</p>
+
+<h1>5&nbsp;&nbsp;CONSIDERAÇÕES FINAIS</h1>
+
+<p>O protótipo Ygapé demonstra um compromisso integrado com as três dimensões avaliadas: a
+experiência de uso é orientada por um sistema visual consistente e por feedback claro; a
+responsividade garante usabilidade do celular ao desktop por meio de abordagem mobile-first e
+reorganização progressiva do layout; e a inclusividade é assegurada por recursos de
+acessibilidade que contemplam navegação por teclado, leitores de tela, baixa visão e
+preferências de movimento reduzido. Tais decisões estabelecem uma base sólida para a migração
+à arquitetura definitiva do sistema.</p>
+
+</div>
+</body>
+</html>

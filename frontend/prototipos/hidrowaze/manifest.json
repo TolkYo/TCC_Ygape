@@ -1,0 +1,13 @@
+{
+  "name": "Ygapé — Roteamento Fluvial",
+  "short_name": "Ygapé",
+  "description": "Roteamento fluvial dinâmico da bacia amazônica. Cálculo de rotas por calado, nível e correnteza.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0b1f2e",
+  "theme_color": "#0b1f2e",
+  "icons": [
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
