@@ -478,11 +478,59 @@ def _montar_geojson(edges) -> dict:
     return {"type": "FeatureCollection", "features": features}
 
 
-def _verificar_rota(rota: dict) -> dict | None:
+def _ultimas_leituras_ana(codigos: set[str]) -> dict[str, float]:
+    """Pull dirigido: le da ANA apenas as estacoes informadas (cota atual em cm)."""
+    if not codigos:
+        return {}
+    try:
+        from ana_client import AnaClient
+
+        cliente = AnaClient()
+    except Exception as exc:  # credenciais ausentes ou biblioteca indisponivel
+        print(f"[monitor] ANA indisponivel, usando telemetria do banco: {exc}")
+        return {}
+    data_busca = datetime.now().strftime("%Y-%m-%d")
+    lista = sorted(codigos)
+    brutas: dict[str, tuple[str, float]] = {}
+    for i in range(0, len(lista), 10):
+        lote = lista[i:i + 10]
+        try:
+            dados = cliente._get(
+                "/EstacoesTelemetricas/HidroinfoanaSerieTelemetricaAdotada/v2",
+                params={
+                    "Codigos_Estacoes": ",".join(lote),
+                    "Tipo Filtro Data": "DATA_LEITURA",
+                    "Data de Busca": data_busca,
+                    "Range Intervalo de busca": "DIAS_30",
+                },
+            )
+        except Exception as exc:
+            print(f"[monitor] ANA lote {i // 10 + 1}: {exc}")
+            continue
+        for item in dados.get("items") or []:
+            codigo = item.get("codigoestacao")
+            cota = item.get("Cota_Adotada")
+            quando = item.get("Data_Hora_Medicao") or ""
+            if codigo is None or cota is None:
+                continue
+            codigo = str(codigo)
+            try:
+                valor = float(cota)
+            except (TypeError, ValueError):
+                continue
+            anterior = brutas.get(codigo)
+            if anterior is None or quando > anterior[0]:
+                brutas[codigo] = (quando, valor)
+    return {codigo: valor for codigo, (_, valor) in brutas.items()}
+
+
+def _verificar_rota(rota: dict, leituras: dict[str, float]) -> dict | None:
     codigo = rota["estacao_referencia"]
     if not codigo:
         return None
-    nivel = nivel_atual_cm(codigo)
+    nivel = leituras.get(codigo)
+    if nivel is None:
+        nivel = nivel_atual_cm(codigo)
     if nivel is None:
         return None
     baseline = float(rota["nivel_baseline_cm"]) if rota["nivel_baseline_cm"] is not None else None
@@ -551,9 +599,11 @@ def verificar_rotas_monitoradas() -> list[tuple[int, dict]]:
                 "FROM rotas WHERE monitorar=TRUE"
             )
             rotas = [dict(r) for r in cur.fetchall()]
+    codigos = {r["estacao_referencia"] for r in rotas if r["estacao_referencia"]}
+    leituras = _ultimas_leituras_ana(codigos)
     for rota in rotas:
         try:
-            evento = _verificar_rota(rota)
+            evento = _verificar_rota(rota, leituras)
             if evento:
                 eventos.append((rota["usuario_id"], evento))
         except Exception as exc:  # uma rota com erro nao derruba as demais
