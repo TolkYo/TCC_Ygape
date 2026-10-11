@@ -1,18 +1,25 @@
-"""Motor de roteamento sobre a topologia real BHAE persistida no SQLite."""
+"""Motor de roteamento sobre a topologia real BHAE persistida no PostgreSQL/PostGIS.
+
+Otimizacao: a distancia de cada aresta e calculada pelo PostGIS (`ST_Length` sobre
+`geography`), evitando ler/parsear os ~100 MB de geometria em Python. A geometria so e
+carregada sob demanda, para os trechos que compoem a rota (`geometries`).
+"""
 from __future__ import annotations
 
 import heapq
 import math
-import sqlite3
 import struct
 import threading
 from collections import defaultdict
 from dataclasses import dataclass
-from pathlib import Path
+
+import psycopg2
+
+from db import pg_config
 
 
 def _lines(wkb: bytes) -> list[list[list[float]]]:
-    """Lê LineString/MultiLineString WKB (formato gravado por gerar_sqlite.py)."""
+    """Le LineString/MultiLineString WKB (OGC, via ST_AsBinary do PostGIS)."""
     def read_at(offset: int):
         endian = "<" if wkb[offset] == 1 else ">"
         kind = struct.unpack_from(endian + "I", wkb, offset + 1)[0]
@@ -35,16 +42,6 @@ def _lines(wkb: bytes) -> list[list[list[float]]]:
     return read_at(0)[0]
 
 
-def _distance_km(lines: list[list[list[float]]]) -> float:
-    total = 0.0
-    for line in lines:
-        for a, b in zip(line, line[1:]):
-            lat1, lon1, lat2, lon2 = map(math.radians, (a[1], a[0], b[1], b[0]))
-            h = math.sin((lat2 - lat1) / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin((lon2 - lon1) / 2) ** 2
-            total += 6371.0088 * 2 * math.asin(math.sqrt(h))
-    return total
-
-
 @dataclass(frozen=True)
 class Edge:
     fid: int
@@ -52,12 +49,11 @@ class Edge:
     target: int
     distance_km: float
     depth_m: float | None
-    geometry: list[list[list[float]]]
 
 
 class RiverGraph:
-    def __init__(self, database: Path):
-        self.database = database
+    def __init__(self, config: dict | None = None):
+        self.config = config or pg_config()
         self.edges: dict[int, Edge] = {}
         self.adjacency: dict[int, list[tuple[int, int]]] = defaultdict(list)
         self.station_edges: dict[str, int] = {}
@@ -70,23 +66,42 @@ class RiverGraph:
         with self._lock:
             if self._loaded:
                 return
-            con = sqlite3.connect(f"file:{self.database}?mode=ro", uri=True)
+            con = psycopg2.connect(**self.config)
             try:
-                rows = con.execute("SELECT fid,noorigem,nodestino,hig_drn_depth_m,geom_wkb FROM trechos_navegaveis").fetchall()
-                for fid, source, target, depth, geometry in rows:
-                    lines = _lines(geometry) if geometry else []
-                    distance = _distance_km(lines)
-                    if not lines or distance <= 0:
+                cur = con.cursor()
+                cur.execute(
+                    "SELECT fid,noorigem,nodestino,hig_drn_depth_m,"
+                    "ST_Length(geom::geography)/1000.0 AS distancia_km "
+                    "FROM trechos_navegaveis WHERE geom IS NOT NULL"
+                )
+                for fid, source, target, depth, distancia in cur:
+                    if distancia is None or float(distancia) <= 0:
                         continue
-                    edge = Edge(int(fid), int(source), int(target), distance, float(depth) if depth is not None else None, lines)
+                    edge = Edge(int(fid), int(source), int(target), float(distancia), float(depth) if depth is not None else None)
                     self.edges[edge.fid] = edge
                     # Navegação precisa considerar os dois sentidos do corredor fluvial.
                     self.adjacency[edge.source].append((edge.target, edge.fid))
                     self.adjacency[edge.target].append((edge.source, edge.fid))
-                self.station_edges = {str(code): int(fid) for code, fid in con.execute("SELECT codigo_estacao,fid_trecho FROM estacoes_trechos") if int(fid) in self.edges}
+                cur.execute("SELECT codigo_estacao,fid_trecho FROM estacoes_trechos")
+                self.station_edges = {str(code): int(fid) for code, fid in cur if int(fid) in self.edges}
             finally:
                 con.close()
             self._loaded = True
+
+    def geometries(self, fids: list[int]) -> dict[int, list[list[list[float]]]]:
+        """Geometria (polylinhas) apenas dos trechos informados."""
+        if not fids:
+            return {}
+        con = psycopg2.connect(**self.config)
+        try:
+            cur = con.cursor()
+            cur.execute("SELECT fid,ST_AsBinary(geom) FROM trechos_navegaveis WHERE fid = ANY(%s)", (list(fids),))
+            resultado: dict[int, list[list[list[float]]]] = {}
+            for fid, geometria in cur:
+                resultado[int(fid)] = _lines(bytes(geometria)) if geometria is not None else []
+            return resultado
+        finally:
+            con.close()
 
     def status(self) -> dict:
         self.load()

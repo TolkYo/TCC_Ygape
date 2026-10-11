@@ -1,4 +1,4 @@
-"""Cria o primeiro administrador local da API HidroWize.
+"""Cria o primeiro administrador da API HidroWize (banco PostgreSQL `ygape`).
 
 Exemplo:
   python criar_admin.py --nome "Administrador" --email admin@hidrowize.local
@@ -7,11 +7,9 @@ from __future__ import annotations
 
 import argparse
 import getpass
-import os
-import sqlite3
-from pathlib import Path
 
-from main import AUTH_DB, password_hash
+from db import connection, ensure_schema
+from main import password_hash
 
 
 def main() -> None:
@@ -24,17 +22,16 @@ def main() -> None:
     if len(senha) < 8:
         parser.error("A senha deve ter ao menos 8 caracteres.")
 
-    AUTH_DB.parent.mkdir(parents=True, exist_ok=True)
-    with sqlite3.connect(AUTH_DB) as con:
-        con.execute("""CREATE TABLE IF NOT EXISTS usuarios (
-          id INTEGER PRIMARY KEY AUTOINCREMENT, nome TEXT NOT NULL, email TEXT NOT NULL UNIQUE,
-          senha_hash TEXT NOT NULL, papel TEXT NOT NULL CHECK(papel IN ('admin','piloto')),
-          ativo INTEGER NOT NULL DEFAULT 1, criado_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-        )""")
-        con.execute("""INSERT INTO usuarios(nome,email,senha_hash,papel,ativo) VALUES(?,?,?,?,1)
-          ON CONFLICT(email) DO UPDATE SET nome=excluded.nome, senha_hash=excluded.senha_hash,
-          papel='admin', ativo=1""", (args.nome.strip(), args.email.strip().lower(), password_hash(senha), "admin"))
-    print(f"Administrador disponível em {AUTH_DB}")
+    ensure_schema()
+    with connection() as con:
+        with con.cursor() as cur:
+            cur.execute(
+                """INSERT INTO usuarios(nome,email,senha_hash,papel,ativo) VALUES (%s,%s,%s,'admin',TRUE)
+                ON CONFLICT (email) DO UPDATE SET nome=EXCLUDED.nome, senha_hash=EXCLUDED.senha_hash,
+                papel='admin', ativo=TRUE""",
+                (args.nome.strip(), args.email.strip().lower(), password_hash(senha)),
+            )
+    print(f"Administrador '{args.email.strip().lower()}' disponível.")
 
 
 if __name__ == "__main__":

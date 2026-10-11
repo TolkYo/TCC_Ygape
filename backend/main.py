@@ -3,36 +3,46 @@
 Executar (a partir de ``backend``):
     uvicorn main:app --reload
 
-Os dados hidrográficos são lidos de ``data/hidrowize.db``. Usuários e sessões
-da aplicação ficam em ``data/hidrowize_api.db`` para não alterar a base curada.
+Persistência: PostgreSQL/PostGIS (container ``ygape-db``). Os dados hidrográficos
+(estações, trechos, telemetria, satélite) e os dados da aplicação (usuários,
+rotas, logs) vivem no mesmo banco, alimentado pelo ETL ``carregar_postgis.py``.
 """
 from __future__ import annotations
 
 import base64
 import hashlib
 import hmac
+import json
 import os
 import secrets
-import sqlite3
 import time
-from contextlib import contextmanager
-from pathlib import Path
+from decimal import Decimal
 from typing import Literal
 
-from fastapi import Depends, FastAPI, HTTPException, Request, status
+import psycopg2
+from dotenv import load_dotenv
+from fastapi import Depends, FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from psycopg2.extras import Json
 from pydantic import BaseModel, Field
+
+from db import connection, ensure_schema, pg_config
 from routing_engine import RiverGraph
 
-ROOT = Path(__file__).resolve().parents[1]
-DATA_DB = Path(os.getenv("HIDROWIZE_DATA_DB", ROOT / "data" / "hidrowize.db"))
-AUTH_DB = Path(os.getenv("HIDROWIZE_AUTH_DB", ROOT / "data" / "hidrowize_api.db"))
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+load_dotenv(os.path.join(ROOT, ".env"))
 TOKEN_TTL_SECONDS = int(os.getenv("HIDROWIZE_TOKEN_TTL_SECONDS", "28800"))
 TOKEN_SECRET = os.getenv("HIDROWIZE_TOKEN_SECRET", "")
 bearer = HTTPBearer(auto_error=False)
-river_graph = RiverGraph(DATA_DB)
+river_graph = RiverGraph(pg_config())
+
+ROTA_COLS = (
+    "id, usuario_id, origem_nome, destino_nome, calado_m, margem_seguranca_m, "
+    "velocidade_embarcacao_kmh, distancia_total_km, tempo_total_h, custo_total, "
+    "trechos_criticos, profundidade_minima_m, rota_geojson, monitorar, created_at::text AS created_at"
+)
 
 
 class ApiProblem(Exception):
@@ -42,35 +52,6 @@ class ApiProblem(Exception):
 
 def ok(data: object, status_code: int = 200) -> JSONResponse:
     return JSONResponse(status_code=status_code, content={"success": True, "data": data})
-
-
-@contextmanager
-def data_connection():
-    if not DATA_DB.exists():
-        raise ApiProblem(503, "data_unavailable", "Banco consolidado não encontrado.")
-    con = sqlite3.connect(f"file:{DATA_DB}?mode=ro", uri=True)
-    con.row_factory = sqlite3.Row
-    try:
-        yield con
-    finally:
-        con.close()
-
-
-@contextmanager
-def auth_connection():
-    AUTH_DB.parent.mkdir(parents=True, exist_ok=True)
-    con = sqlite3.connect(AUTH_DB)
-    con.row_factory = sqlite3.Row
-    try:
-        con.execute("""CREATE TABLE IF NOT EXISTS usuarios (
-          id INTEGER PRIMARY KEY AUTOINCREMENT, nome TEXT NOT NULL, email TEXT NOT NULL UNIQUE,
-          senha_hash TEXT NOT NULL, papel TEXT NOT NULL CHECK(papel IN ('admin','piloto')),
-          ativo INTEGER NOT NULL DEFAULT 1, criado_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-        )""")
-        yield con
-        con.commit()
-    finally:
-        con.close()
 
 
 def password_hash(password: str, salt: bytes | None = None) -> str:
@@ -93,7 +74,7 @@ def signing_secret() -> bytes:
     return TOKEN_SECRET.encode("utf-8")
 
 
-def issue_token(user: sqlite3.Row) -> str:
+def issue_token(user: dict) -> str:
     payload = f"{user['id']}:{user['papel']}:{int(time.time()) + TOKEN_TTL_SECONDS}".encode("utf-8")
     signature = hmac.new(signing_secret(), payload, hashlib.sha256).digest()
     return base64.urlsafe_b64encode(payload + b"." + signature).decode("ascii")
@@ -118,8 +99,10 @@ def current_user(credentials: HTTPAuthorizationCredentials | None = Depends(bear
     if not credentials or credentials.scheme.lower() != "bearer":
         raise ApiProblem(401, "missing_token", "Autenticação Bearer obrigatória.")
     token = read_token(credentials.credentials)
-    with auth_connection() as con:
-        row = con.execute("SELECT id,nome,email,papel,ativo FROM usuarios WHERE id=?", (token["id"],)).fetchone()
+    with connection() as con:
+        with con.cursor() as cur:
+            cur.execute("SELECT id,nome,email,papel,ativo FROM usuarios WHERE id=%s", (token["id"],))
+            row = cur.fetchone()
     if not row or not row["ativo"]:
         raise ApiProblem(401, "invalid_token", "Usuário não está ativo.")
     return dict(row)
@@ -129,6 +112,15 @@ def admin_user(user: dict = Depends(current_user)) -> dict:
     if user["papel"] != "admin":
         raise ApiProblem(403, "forbidden", "Esta operação requer perfil de administrador.")
     return user
+
+
+def registrar_evento(tipo: str, detalhe: str, usuario_id: int | None = None) -> None:
+    try:
+        with connection() as con:
+            with con.cursor() as cur:
+                cur.execute("INSERT INTO log_eventos (usuario_id,tipo,detalhe) VALUES (%s,%s,%s)", (usuario_id, tipo, detalhe))
+    except psycopg2.Error:
+        pass
 
 
 class LoginInput(BaseModel):
@@ -150,6 +142,11 @@ class UserUpdate(BaseModel):
     ativo: bool | None = None
 
 
+class ProfileUpdate(BaseModel):
+    nome: str | None = Field(default=None, min_length=2, max_length=120)
+    senha: str | None = Field(default=None, min_length=8, max_length=256)
+
+
 class RouteInput(BaseModel):
     origem_nome: str = Field(min_length=2, max_length=120)
     destino_nome: str = Field(min_length=2, max_length=120)
@@ -165,9 +162,32 @@ class CollectInput(BaseModel):
     periodo_fim: str | None = None
 
 
+class RouteSaveInput(BaseModel):
+    origem_nome: str = Field(min_length=2, max_length=120)
+    destino_nome: str = Field(min_length=2, max_length=120)
+    calado_m: float = Field(ge=0.5, le=6)
+    margem_seguranca_m: float = Field(default=0.5, ge=0, le=3)
+    velocidade_embarcacao_kmh: float = Field(ge=6, le=35)
+    distancia_total_km: float = Field(ge=0)
+    tempo_total_h: float = Field(ge=0)
+    custo_total: float = Field(ge=0)
+    trechos_criticos: int = Field(default=0, ge=0)
+    profundidade_minima_m: float | None = None
+    geojson: dict | None = None
+    monitorar: bool = False
+
+
 app = FastAPI(title="HidroWize API", version="0.1.0", openapi_url="/api/v1/openapi.json", docs_url="/api/v1/docs")
 origins = [item.strip() for item in os.getenv("HIDROWIZE_CORS_ORIGINS", "http://localhost:8000,http://localhost:8080,http://127.0.0.1:8080").split(",")]
 app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+
+
+@app.on_event("startup")
+def iniciar_schema() -> None:
+    try:
+        ensure_schema()
+    except psycopg2.Error as error:
+        print(f"[startup] falha ao garantir o schema: {error}")
 
 
 @app.exception_handler(ApiProblem)
@@ -177,16 +197,26 @@ async def api_problem_handler(_: Request, error: ApiProblem):
 
 @app.get("/health")
 def health():
-    return ok({"status": "ok", "data_db": DATA_DB.exists(), "auth_db": AUTH_DB.exists()})
+    try:
+        with connection() as con:
+            with con.cursor() as cur:
+                cur.execute("SELECT 1")
+        db_ok = True
+    except psycopg2.Error:
+        db_ok = False
+    return ok({"status": "ok" if db_ok else "degraded", "db": db_ok})
 
 
 @app.post("/api/v1/auth/login")
 def login(input: LoginInput):
-    with auth_connection() as con:
-        user = con.execute("SELECT * FROM usuarios WHERE lower(email)=lower(?)", (input.email.strip(),)).fetchone()
+    with connection() as con:
+        with con.cursor() as cur:
+            cur.execute("SELECT * FROM usuarios WHERE lower(email)=lower(%s)", (input.email.strip(),))
+            user = cur.fetchone()
     if not user or not user["ativo"] or not verify_password(input.senha, user["senha_hash"]):
         raise ApiProblem(401, "invalid_credentials", "E-mail ou senha inválidos.")
     public = {key: user[key] for key in ("id", "nome", "email", "papel")}
+    registrar_evento("login", f"Login de {public['email']}", user["id"])
     return ok({"access_token": issue_token(user), "token_type": "bearer", "expires_in": TOKEN_TTL_SECONDS, "usuario": public})
 
 
@@ -195,21 +225,45 @@ def me(user: dict = Depends(current_user)):
     return ok({key: user[key] for key in ("id", "nome", "email", "papel")})
 
 
+@app.put("/api/v1/auth/me")
+def update_me(input: ProfileUpdate, user: dict = Depends(current_user)):
+    fields = input.model_dump(exclude_none=True)
+    if not fields:
+        raise ApiProblem(422, "empty_update", "Informe ao menos um campo para atualizar.")
+    if "senha" in fields:
+        fields["senha_hash"] = password_hash(fields.pop("senha"))
+    columns, values = zip(*fields.items())
+    with connection() as con:
+        with con.cursor() as cur:
+            cur.execute("UPDATE usuarios SET " + ", ".join(f"{key}=%s" for key in columns) + " WHERE id=%s", (*values, user["id"]))
+            cur.execute("SELECT id,nome,email,papel FROM usuarios WHERE id=%s", (user["id"],))
+            row = cur.fetchone()
+    registrar_evento("perfil_atualizado", f"Usuário {user['id']} atualizou o próprio perfil", user["id"])
+    return ok(dict(row))
+
+
 @app.get("/api/v1/usuarios")
 def list_users(_: dict = Depends(admin_user)):
-    with auth_connection() as con:
-        rows = [dict(row) for row in con.execute("SELECT id,nome,email,papel,ativo,criado_em FROM usuarios ORDER BY nome")]
+    with connection() as con:
+        with con.cursor() as cur:
+            cur.execute("SELECT id,nome,email,papel,ativo,criado_em::text AS criado_em FROM usuarios ORDER BY nome")
+            rows = [dict(row) for row in cur.fetchall()]
     return ok({"items": rows, "total": len(rows)})
 
 
 @app.post("/api/v1/usuarios", status_code=status.HTTP_201_CREATED)
-def create_user(input: UserInput, _: dict = Depends(admin_user)):
+def create_user(input: UserInput, admin: dict = Depends(admin_user)):
     try:
-        with auth_connection() as con:
-            cursor = con.execute("INSERT INTO usuarios (nome,email,senha_hash,papel) VALUES (?,?,?,?)", (input.nome.strip(), input.email.strip().lower(), password_hash(input.senha), input.papel))
-            row = con.execute("SELECT id,nome,email,papel,ativo FROM usuarios WHERE id=?", (cursor.lastrowid,)).fetchone()
-    except sqlite3.IntegrityError:
+        with connection() as con:
+            with con.cursor() as cur:
+                cur.execute(
+                    "INSERT INTO usuarios (nome,email,senha_hash,papel) VALUES (%s,%s,%s,%s) RETURNING id,nome,email,papel,ativo",
+                    (input.nome.strip(), input.email.strip().lower(), password_hash(input.senha), input.papel),
+                )
+                row = cur.fetchone()
+    except psycopg2.errors.UniqueViolation:
         raise ApiProblem(409, "email_exists", "Já existe um usuário com este e-mail.")
+    registrar_evento("usuario_criado", f"Usuário {row['email']} criado (papel {row['papel']})", admin["id"])
     return ok(dict(row), 201)
 
 
@@ -221,20 +275,26 @@ def update_user(user_id: int, input: UserUpdate, _: dict = Depends(admin_user)):
     if "senha" in fields:
         fields["senha_hash"] = password_hash(fields.pop("senha"))
     columns, values = zip(*fields.items())
-    with auth_connection() as con:
-        cursor = con.execute("UPDATE usuarios SET " + ", ".join(f"{key}=?" for key in columns) + " WHERE id=?", (*values, user_id))
-        row = con.execute("SELECT id,nome,email,papel,ativo FROM usuarios WHERE id=?", (user_id,)).fetchone()
-    if not cursor.rowcount or not row:
+    with connection() as con:
+        with con.cursor() as cur:
+            cur.execute("UPDATE usuarios SET " + ", ".join(f"{key}=%s" for key in columns) + " WHERE id=%s", (*values, user_id))
+            atualizados = cur.rowcount
+            cur.execute("SELECT id,nome,email,papel,ativo FROM usuarios WHERE id=%s", (user_id,))
+            row = cur.fetchone()
+    if not atualizados or not row:
         raise ApiProblem(404, "user_not_found", "Usuário não encontrado.")
     return ok(dict(row))
 
 
 @app.delete("/api/v1/usuarios/{user_id}")
-def disable_user(user_id: int, _: dict = Depends(admin_user)):
-    with auth_connection() as con:
-        cursor = con.execute("UPDATE usuarios SET ativo=0 WHERE id=?", (user_id,))
-    if not cursor.rowcount:
+def disable_user(user_id: int, admin: dict = Depends(admin_user)):
+    with connection() as con:
+        with con.cursor() as cur:
+            cur.execute("UPDATE usuarios SET ativo=FALSE WHERE id=%s", (user_id,))
+            removidos = cur.rowcount
+    if not removidos:
         raise ApiProblem(404, "user_not_found", "Usuário não encontrado.")
+    registrar_evento("usuario_desativado", f"Usuário {user_id} desativado", admin["id"])
     return ok({"id": user_id, "ativo": False})
 
 
@@ -242,9 +302,9 @@ def disable_user(user_id: int, _: dict = Depends(admin_user)):
 def list_stations(rio: str | None = None, municipio: str | None = None, ativa: bool = True):
     clauses, params = ["1=1"], []
     if rio:
-        clauses.append("e.nome_rio LIKE ?"); params.append(f"%{rio}%")
+        clauses.append("e.nome_rio ILIKE %s"); params.append(f"%{rio}%")
     if municipio:
-        clauses.append("e.municipio LIKE ?"); params.append(f"%{municipio}%")
+        clauses.append("e.municipio ILIKE %s"); params.append(f"%{municipio}%")
     if ativa:
         clauses.append("COALESCE(e.operando, 1)=1")
     query = f"""SELECT e.codigo_estacao,e.nome_estacao,e.nome_rio,e.municipio,e.latitude,e.longitude,
@@ -252,8 +312,10 @@ def list_stations(rio: str | None = None, municipio: str | None = None, ativa: b
       FROM estacoes e LEFT JOIN cotas_historicas h USING(codigo_estacao)
       LEFT JOIN telemetria t ON t.id=(SELECT id FROM telemetria WHERE codigo_estacao=e.codigo_estacao ORDER BY data_hora_medicao DESC,id DESC LIMIT 1)
       WHERE {' AND '.join(clauses)} ORDER BY e.nome_estacao"""
-    with data_connection() as con:
-        items = [dict(row) for row in con.execute(query, params)]
+    with connection() as con:
+        with con.cursor() as cur:
+            cur.execute(query, params)
+            items = [dict(row) for row in cur.fetchall()]
     for item in items:
         item["cota_minima_historica_m"] = item.pop("cota_minima", None)
         item["nivel_atual_cm"] = item.pop("cota_adotada", None)
@@ -263,8 +325,10 @@ def list_stations(rio: str | None = None, municipio: str | None = None, ativa: b
 
 @app.get("/api/v1/estacoes/{codigo}")
 def station(codigo: str):
-    with data_connection() as con:
-        row = con.execute("SELECT codigo_estacao,nome_estacao,nome_rio,municipio,latitude,longitude FROM estacoes WHERE codigo_estacao=?", (codigo,)).fetchone()
+    with connection() as con:
+        with con.cursor() as cur:
+            cur.execute("SELECT codigo_estacao,nome_estacao,nome_rio,municipio,latitude,longitude FROM estacoes WHERE codigo_estacao=%s", (codigo,))
+            row = cur.fetchone()
     if not row:
         raise ApiProblem(404, "station_not_found", "Estação não encontrada.")
     return ok(dict(row))
@@ -272,16 +336,18 @@ def station(codigo: str):
 
 @app.get("/api/v1/niveis")
 def levels(estacao: str, data_inicio: str, data_fim: str | None = None, _: dict = Depends(current_user)):
-    with data_connection() as con:
-        exists = con.execute("SELECT 1 FROM estacoes WHERE codigo_estacao=?", (estacao,)).fetchone()
-        if not exists:
-            raise ApiProblem(404, "station_not_found", "Estação não encontrada.")
-        query = "SELECT data_hora_medicao,cota_adotada,chuva_adotada,vazao_adotada FROM telemetria WHERE codigo_estacao=? AND substr(data_hora_medicao,1,10)>=?"
-        params = [estacao, data_inicio]
-        if data_fim:
-            query += " AND substr(data_hora_medicao,1,10)<=?"; params.append(data_fim)
-        query += " ORDER BY data_hora_medicao"
-        items = [dict(row) for row in con.execute(query, params)]
+    with connection() as con:
+        with con.cursor() as cur:
+            cur.execute("SELECT 1 FROM estacoes WHERE codigo_estacao=%s", (estacao,))
+            if not cur.fetchone():
+                raise ApiProblem(404, "station_not_found", "Estação não encontrada.")
+            query = "SELECT data_hora_medicao,cota_adotada,chuva_adotada,vazao_adotada FROM telemetria WHERE codigo_estacao=%s AND substr(data_hora_medicao,1,10)>=%s"
+            params = [estacao, data_inicio]
+            if data_fim:
+                query += " AND substr(data_hora_medicao,1,10)<=%s"; params.append(data_fim)
+            query += " ORDER BY data_hora_medicao"
+            cur.execute(query, params)
+            items = [dict(row) for row in cur.fetchall()]
     return ok({"estacao": estacao, "items": [{"data_hora": x["data_hora_medicao"], "nivel_cm": x["cota_adotada"], "chuva_mm": x["chuva_adotada"], "vazao": x["vazao_adotada"]} for x in items]})
 
 
@@ -297,11 +363,13 @@ def graph_status():
 
 
 def station_code(identifier: str) -> str:
-    with data_connection() as con:
-        row = con.execute("""SELECT e.codigo_estacao FROM estacoes e
-          JOIN estacoes_trechos et ON et.codigo_estacao=e.codigo_estacao
-          WHERE e.codigo_estacao=? OR upper(e.nome_estacao)=upper(?)
-          ORDER BY et.distancia_m ASC LIMIT 1""", (identifier, identifier)).fetchone()
+    with connection() as con:
+        with con.cursor() as cur:
+            cur.execute("""SELECT e.codigo_estacao FROM estacoes e
+              JOIN estacoes_trechos et ON et.codigo_estacao=e.codigo_estacao
+              WHERE e.codigo_estacao=%s OR upper(e.nome_estacao)=upper(%s)
+              ORDER BY et.distancia_m ASC LIMIT 1""", (identifier, identifier))
+            row = cur.fetchone()
     if not row:
         raise ApiProblem(404, "port_not_found", f"Porto ou estação não encontrado: {identifier}.")
     return str(row["codigo_estacao"])
@@ -320,10 +388,12 @@ def calculate_route(input: RouteInput):
 
     distance = sum(edge.distance_km for edge in edges)
     depths = [edge.depth_m for edge in edges if edge.depth_m is not None]
+    geometrias = river_graph.geometries([edge.fid for edge in edges])
     features = []
     items = []
     for edge in edges:
-        geometry = {"type": "LineString", "coordinates": edge.geometry[0]} if len(edge.geometry) == 1 else {"type": "MultiLineString", "coordinates": edge.geometry}
+        linhas = geometrias.get(edge.fid, [])
+        geometry = {"type": "LineString", "coordinates": linhas[0]} if len(linhas) == 1 else {"type": "MultiLineString", "coordinates": linhas}
         transitavel = edge.depth_m is None or edge.depth_m >= input.calado_m + input.margem_seguranca_m
         props = {"fid": edge.fid, "distancia_km": round(edge.distance_km, 3), "profundidade_m": edge.depth_m, "transitavel": transitavel}
         features.append({"type": "Feature", "properties": props, "geometry": geometry})
@@ -335,3 +405,80 @@ def calculate_route(input: RouteInput):
         "profundidade_minima_m": min(depths) if depths else None,
         "geojson": {"type": "FeatureCollection", "features": features}, "items": items
     })
+
+
+def _rota_publica(row) -> dict:
+    item = dict(row)
+    item["monitorar"] = bool(item["monitorar"])
+    for chave, valor in list(item.items()):
+        if isinstance(valor, Decimal):
+            item[chave] = float(valor)
+    geo = item.get("rota_geojson")
+    if isinstance(geo, str):
+        geo = json.loads(geo)
+    item["rota_geojson"] = geo
+    return item
+
+
+@app.post("/api/v1/rotas", status_code=status.HTTP_201_CREATED)
+def save_route(input: RouteSaveInput, user: dict = Depends(current_user)):
+    with connection() as con:
+        with con.cursor() as cur:
+            cur.execute(
+                """INSERT INTO rotas (usuario_id,origem_nome,destino_nome,calado_m,margem_seguranca_m,
+                velocidade_embarcacao_kmh,distancia_total_km,tempo_total_h,custo_total,trechos_criticos,
+                profundidade_minima_m,rota_geojson,monitorar) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                RETURNING id""",
+                (user["id"], input.origem_nome.strip(), input.destino_nome.strip(), input.calado_m,
+                 input.margem_seguranca_m, input.velocidade_embarcacao_kmh, input.distancia_total_km,
+                 input.tempo_total_h, input.custo_total, input.trechos_criticos, input.profundidade_minima_m,
+                 Json(input.geojson) if input.geojson is not None else None, bool(input.monitorar)),
+            )
+            novo_id = cur.fetchone()["id"]
+            cur.execute(f"SELECT {ROTA_COLS} FROM rotas WHERE id=%s", (novo_id,))
+            row = cur.fetchone()
+    registrar_evento("rota_salva", f"Rota {input.origem_nome} → {input.destino_nome}", user["id"])
+    return ok(_rota_publica(row), 201)
+
+
+@app.get("/api/v1/rotas")
+def list_routes(user: dict = Depends(current_user)):
+    with connection() as con:
+        with con.cursor() as cur:
+            cur.execute(f"SELECT {ROTA_COLS} FROM rotas WHERE usuario_id=%s ORDER BY created_at DESC, id DESC", (user["id"],))
+            rows = cur.fetchall()
+    items = [_rota_publica(row) for row in rows]
+    return ok({"items": items, "total": len(items)})
+
+
+@app.get("/api/v1/rotas/{rota_id}")
+def get_route(rota_id: int, user: dict = Depends(current_user)):
+    with connection() as con:
+        with con.cursor() as cur:
+            cur.execute(f"SELECT {ROTA_COLS} FROM rotas WHERE id=%s AND usuario_id=%s", (rota_id, user["id"]))
+            row = cur.fetchone()
+    if not row:
+        raise ApiProblem(404, "route_not_found", "Rota não encontrada.")
+    return ok(_rota_publica(row))
+
+
+@app.delete("/api/v1/rotas/{rota_id}")
+def delete_route(rota_id: int, user: dict = Depends(current_user)):
+    with connection() as con:
+        with con.cursor() as cur:
+            cur.execute("DELETE FROM rotas WHERE id=%s AND usuario_id=%s", (rota_id, user["id"]))
+            removidas = cur.rowcount
+    if not removidas:
+        raise ApiProblem(404, "route_not_found", "Rota não encontrada.")
+    return ok({"id": rota_id, "removida": True})
+
+
+@app.get("/api/v1/logs")
+def list_logs(limite: int = 100, _: dict = Depends(admin_user)):
+    limite = max(1, min(limite, 500))
+    with connection() as con:
+        with con.cursor() as cur:
+            cur.execute("SELECT id,usuario_id,tipo,detalhe,data_hora::text AS data_hora FROM log_eventos ORDER BY id DESC LIMIT %s", (limite,))
+            rows = cur.fetchall()
+    items = [dict(row) for row in rows]
+    return ok({"items": items, "total": len(items)})
