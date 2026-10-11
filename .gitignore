@@ -35,3 +35,23 @@ node_modules/
 # IDE
 .vscode/
 .idea/
+
+# Sistemas operacionais
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Caches de ferramentas / build
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+*.egg-info/
+*.tsbuildinfo
+build/
+
+# Backups e artefatos de merge
+*.bak
+*.bak.*
+*.orig
+*.rej
