@@ -161,8 +161,10 @@
 | Metodo | Rota | Auth | Descricao |
 |--------|------|------|-----------|
 | POST | /rotas/calcular | Nao | Calcular rota sobre a malha hidroviária pública |
+| POST | /rotas | Sim | Salvar rota calculada no historico do usuario |
 | GET | /rotas/{id} | Sim | Detalhar rota salva |
 | GET | /rotas | Sim | Historico do usuario |
+| DELETE | /rotas/{id} | Sim | Remover rota do historico |
 | GET | /grafo/status | Sim | Estado do grafo (nos/arestas) |
 | POST | /rotas/{id}/monitorar | Sim | Ativar/desativar monitoramento (RF027) |
 | GET | /rotas/{id}/alteracoes | Sim | Historico de recomputacoes (RF030) |
@@ -206,6 +208,44 @@
 
 **Erros**: 422 (calado invalido), 404 (origem/destino inexistentes ou rota nao encontrada),
 500 (grafo nao carregado).
+
+### POST /rotas
+
+Salva uma rota calculada no historico do usuario autenticado (RF025).
+
+**Request**:
+```json
+{
+  "origem_nome": "MANAUS",
+  "destino_nome": "ITACOATIARA",
+  "calado_m": 3.2,
+  "margem_seguranca_m": 0.5,
+  "velocidade_embarcacao_kmh": 12,
+  "distancia_total_km": 194.32,
+  "tempo_total_h": 16.19,
+  "custo_total": 16.19,
+  "trechos_criticos": 2,
+  "profundidade_minima_m": 4.1,
+  "geojson": { "type": "FeatureCollection", "features": [] },
+  "monitorar": false
+}
+```
+
+**Response 201**: objeto da rota salva (campo `id`, `rota_geojson`, `monitorar`, `created_at`).
+**Erros**: 401 (sem token), 422 (dados invalidos).
+
+### GET /rotas
+
+Historico do usuario autenticado, ordenado por `created_at` decrescente.
+**Response 200**: `{ "items": [ { "id": 15, "origem_nome": "MANAUS", ... } ], "total": 1 }`
+
+### GET /rotas/{id}
+
+Detalha uma rota salva do proprio usuario. **Erros**: 404 (nao encontrada ou de outro usuario).
+
+### DELETE /rotas/{id}
+
+Remove uma rota do historico do proprio usuario. **Response 200**: `{ "id": 15, "removida": true }`.
 
 ### POST /rotas/{id}/monitorar
 
@@ -341,6 +381,29 @@ permitir o recálculo offline (RF022/RN026). Arestas desconhecidas chegam com `c
 
 Se o WebSocket nao estiver disponivel (rede corporativa/proxy), o front-end faz polling de
 `GET /rotas/{id}/alteracoes` a cada 5 minutos (RN027).
+
+---
+
+## Logs (auditoria)
+
+| Metodo | Rota | Auth | Descricao |
+|--------|------|------|-----------|
+| GET | /logs | admin | Eventos recentes da aplicacao (login, usuarios, rotas) |
+
+**Query Params**: `limite` (int, default 100, max 500).
+
+**Response 200**:
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      { "id": 12, "usuario_id": 2, "tipo": "rota_salva", "detalhe": "Rota MANAUS → ITACOATIARA", "data_hora": "2026-10-11 13:20:00" }
+    ],
+    "total": 1
+  }
+}
+```
 
 ---
 

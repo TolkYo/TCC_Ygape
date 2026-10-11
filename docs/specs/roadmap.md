@@ -36,29 +36,30 @@
 
 ## Fase 3 — API Completa e Auth
 
-- [ ] RF001 — Login JWT + roles admin/piloto
-- [ ] RF002 — CRUD de usuarios (admin)
-- [ ] RF011 — Endpoints de estacoes e niveis
-- [ ] RF010 — Coleta manual (admin)
-- [ ] RF025 — Historico de rotas por usuario
-- [ ] Swagger/OpenAPI documentado automaticamente (FastAPI)
+- [x] RF001 — Login JWT + roles admin/piloto
+- [x] RF002 — CRUD de usuarios (admin)
+- [x] RF011 — Endpoints de estacoes e niveis
+- [ ] RF010 — Coleta manual (admin) — endpoint responde 501 (depende do serviço agendado)
+- [x] RF025 — Historico de rotas por usuario
+- [x] Swagger/OpenAPI documentado automaticamente (FastAPI)
+- [x] RF026 — Painel de auditoria (log_eventos + GET /logs + LogsView)
 
 ## Fase 4 — Frontend Core
 
-- [ ] RF009 — Mapa interativo (Leaflet) com estacoes e niveis
-- [ ] RF016 — Formulario de rota (origem/destino/calado)
-- [ ] RF017 — Exibicao da rota + resumo (distancia, trechos criticos)
-- [ ] RF011 — Marcadores de estacoes com nivel atual
-- [ ] RF025 — Historico de rotas no app
+- [x] RF009 — Mapa interativo (Leaflet) com estacoes e niveis
+- [x] RF016 — Formulario de rota (origem/destino/calado)
+- [x] RF017 — Exibicao da rota + resumo (distancia, trechos criticos)
+- [x] RF011 — Marcadores de estacoes com nivel atual
+- [x] RF025 — Historico de rotas no app
 
 ## Fase 5 — Offline e Sincronizacao
 
-- [ ] RF021 — Persistencia local (Dexie.js: grafo, estacoes, niveis, rotas)
-- [ ] RNF07 — Service Worker (stale-while-revalidate)
+- [x] RF021 — Persistencia local (Dexie.js: estacoes, rotas, fila de pendencias)
+- [x] RNF07 — Service Worker (stale-while-revalidate) + manifest PWA
 - [ ] RF022 — Calculo offline com A* local (services/roteador.ts) sobre o grafo do snapshot
 - [ ] RN026 — Paridade de resultados offline vs backend
-- [ ] RF023 — Sincronizacao automatica (pull/push)
-- [ ] RF024 — Logs de sincronizacao
+- [x] RF023 — Sincronizacao automatica (pull/push)
+- [x] RF024 — Logs de sincronizacao (data da ultima sync + fila)
 - [ ] RNF03 — Validar 24h de uso offline
 
 ## Fase 5b — Notificacoes em Tempo Real
