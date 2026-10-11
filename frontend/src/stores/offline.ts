@@ -6,8 +6,10 @@ import {
   enfileirarRota,
   guardarEstacoes,
   guardarRotas,
+  guardarSnapshot,
   guardarUltimaSincronizacao,
   lerPendentes,
+  lerSnapshot,
   lerUltimaSincronizacao,
   removerPendente,
 } from '@/services/cache'
@@ -20,10 +22,29 @@ export const useOfflineStore = defineStore('offline', () => {
   const ultimaSincronizacao = ref<string | null>(null)
   const pendentes = ref(0)
   const erro = ref<string | null>(null)
+  const temSnapshot = ref(false)
+  const snapshotGeradoEm = ref<string | null>(null)
 
   async function atualizarContadores(): Promise<void> {
     pendentes.value = await contarPendentes()
     ultimaSincronizacao.value = await lerUltimaSincronizacao()
+    const snap = await lerSnapshot()
+    temSnapshot.value = snap !== undefined
+    snapshotGeradoEm.value = snap?.gerado_em ?? null
+  }
+
+  async function baixarSnapshot(): Promise<boolean> {
+    erro.value = null
+    try {
+      const snap = await api.snapshot()
+      await guardarSnapshot(snap, snap.gerado_em)
+      temSnapshot.value = true
+      snapshotGeradoEm.value = snap.gerado_em
+      return true
+    } catch (e) {
+      erro.value = e instanceof Error ? e.message : 'Falha ao baixar o snapshot offline.'
+      return false
+    }
   }
 
   async function enfileirar(payload: SalvarRotaInput): Promise<void> {
@@ -96,7 +117,10 @@ export const useOfflineStore = defineStore('offline', () => {
     ultimaSincronizacao,
     pendentes,
     erro,
+    temSnapshot,
+    snapshotGeradoEm,
     atualizarContadores,
+    baixarSnapshot,
     enfileirar,
     sincronizar,
     registarListeners,

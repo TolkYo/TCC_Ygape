@@ -137,6 +137,13 @@ const rotuloSalvar = computed(() => {
     </p>
 
     <div v-if="rota.resultado" class="space-y-4">
+      <p
+        v-if="rota.calculadoOffline"
+        role="status"
+        class="rounded bg-warning/10 px-3 py-2 text-sm text-warning"
+      >
+        Rota calculada <strong>offline</strong> (sem conexão com o servidor) a partir do snapshot local.
+      </p>
       <div class="grid gap-4 lg:grid-cols-[1fr_360px]">
         <RiverMap :estacoes="estacoes.itens" :rota="rota.resultado" altura="60vh" />
         <RouteSummary :resultado="rota.resultado" />

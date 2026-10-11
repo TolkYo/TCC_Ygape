@@ -1,5 +1,5 @@
-import { db, type RotaPendente } from '@/db'
-import type { Estacao, RotaSalva, SalvarRotaInput } from '@/types/api'
+import { db, type RotaPendente, type SnapshotArmazenado } from '@/db'
+import type { Estacao, RotaSalva, SalvarRotaInput, SnapshotGrafo } from '@/types/api'
 
 const CHAVE_ULTIMA_SINCRONIZACAO = 'ultima_sincronizacao'
 
@@ -51,7 +51,21 @@ export async function lerUltimaSincronizacao(): Promise<string | null> {
 }
 
 export async function limparCache(): Promise<void> {
-  await db.transaction('rw', db.estacoes, db.rotas, db.pendentes, db.meta, async () => {
-    await Promise.all([db.estacoes.clear(), db.rotas.clear(), db.pendentes.clear(), db.meta.clear()])
+  await db.transaction('rw', db.estacoes, db.rotas, db.pendentes, db.meta, db.grafo, async () => {
+    await Promise.all([
+      db.estacoes.clear(),
+      db.rotas.clear(),
+      db.pendentes.clear(),
+      db.meta.clear(),
+      db.grafo.clear(),
+    ])
   })
+}
+
+export async function guardarSnapshot(dados: SnapshotGrafo, geradoEm: string): Promise<void> {
+  await db.grafo.put({ chave: 'atual', gerado_em: geradoEm, dados })
+}
+
+export function lerSnapshot(): Promise<SnapshotArmazenado | undefined> {
+  return db.grafo.get('atual')
 }

@@ -56,8 +56,8 @@
 
 - [x] RF021 — Persistencia local (Dexie.js: estacoes, rotas, fila de pendencias)
 - [x] RNF07 — Service Worker (stale-while-revalidate) + manifest PWA
-- [ ] RF022 — Calculo offline com A* local (services/roteador.ts) sobre o grafo do snapshot
-- [ ] RN026 — Paridade de resultados offline vs backend
+- [x] RF022 — Calculo offline com A* local (services/roteador.ts) sobre o grafo do snapshot
+- [x] RN026 — Paridade de resultados offline vs backend (mesma regra de custo/transitabilidade; teste sintetico)
 - [x] RF023 — Sincronizacao automatica (pull/push)
 - [x] RF024 — Logs de sincronizacao (data da ultima sync + fila)
 - [ ] RNF03 — Validar 24h de uso offline

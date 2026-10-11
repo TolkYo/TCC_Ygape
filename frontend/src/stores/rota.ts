@@ -1,9 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-import { guardarRotas, lerRotas as lerRotasCache } from '@/services/cache'
+import { guardarRotas, lerRotas as lerRotasCache, lerSnapshot } from '@/services/cache'
 import { api } from '@/services/endpoints'
 import { ApiProblem } from '@/services/http'
+import { calcularOffline } from '@/services/roteador'
+import { useEstacoesStore } from '@/stores/estacoes'
 import { useOfflineStore } from '@/stores/offline'
 import type { AlteracaoRota, MonitorResultado, RotaSalva, RouteRequest, RouteResult, SalvarRotaInput } from '@/types/api'
 
@@ -24,6 +26,7 @@ export const useRotaStore = defineStore('rota', () => {
   const erro = ref<string | null>(null)
   const idSalvo = ref<number | null>(null)
   const salvoLocal = ref(false)
+  const calculadoOffline = ref(false)
 
   const historico = ref<RotaSalva[]>([])
   const carregandoHistorico = ref(false)
@@ -48,15 +51,42 @@ export const useRotaStore = defineStore('rota', () => {
     }
   }
 
+  async function calcularOfflineSePossivel(): Promise<RouteResult | null> {
+    const snap = await lerSnapshot()
+    if (!snap) return null
+    const est = useEstacoesStore()
+    const codigoDe = (nome: string) => est.itens.find((e) => e.nome_estacao === nome)?.codigo_estacao
+    const origem = codigoDe(parametros.value.origem_nome)
+    const destino = codigoDe(parametros.value.destino_nome)
+    if (!origem || !destino) return null
+    return calcularOffline(
+      snap.dados,
+      origem,
+      destino,
+      parametros.value.calado_m,
+      parametros.value.margem_seguranca_m,
+      parametros.value.velocidade_embarcacao_kmh,
+    )
+  }
+
   async function calcular(): Promise<void> {
     calculando.value = true
     erro.value = null
     idSalvo.value = null
     salvoLocal.value = false
+    calculadoOffline.value = false
     try {
       resultado.value = await api.calcularRota({ ...parametros.value })
     } catch (e) {
       resultado.value = null
+      if (!(e instanceof ApiProblem)) {
+        const offline = await calcularOfflineSePossivel()
+        if (offline) {
+          resultado.value = offline
+          calculadoOffline.value = true
+          return
+        }
+      }
       erro.value = mensagemErro(e, 'Falha ao calcular a rota.')
     } finally {
       calculando.value = false
@@ -152,6 +182,7 @@ export const useRotaStore = defineStore('rota', () => {
     resultado.value = null
     idSalvo.value = null
     salvoLocal.value = false
+    calculadoOffline.value = false
   }
 
   function limpar(): void {
@@ -159,6 +190,7 @@ export const useRotaStore = defineStore('rota', () => {
     erro.value = null
     idSalvo.value = null
     salvoLocal.value = false
+    calculadoOffline.value = false
   }
 
   return {
@@ -168,6 +200,7 @@ export const useRotaStore = defineStore('rota', () => {
     erro,
     idSalvo,
     salvoLocal,
+    calculadoOffline,
     historico,
     carregandoHistorico,
     salvando,

@@ -99,7 +99,7 @@ Em termos de etapas:
 | ID | Requisito | Status | Observação |
 |----|-----------|--------|------------|
 | RF021 | Persistência local (rota, níveis, grafo) | Atendido | Dexie/IndexedDB: estações, rotas e fila de pendências |
-| RF022 | Cálculo de rota offline | Não iniciado | Adiado: o grafo da BHAE (~820 MB) não cabe no cliente; depende de subgrafo simplificado |
+| RF022 | Cálculo de rota offline | Atendido | `GET /sync/snapshot` (grafo ~9 MB) + `services/roteador.ts` (Dijkstra local) + fallback no `useRotaStore` |
 | RF023 | Sincronização automática (pull/push) | Atendido | `useOfflineStore`: pull de estações/rotas e push das rotas pendentes ao voltar online |
 | RF024 | Log de sincronização | Parcial | Data da última sincronização + fila de pendências; log de auditoria de eventos separado |
 
@@ -159,7 +159,7 @@ Em termos de etapas:
 | Nível | RN013–RN015 | Atendidas nos dados (mínima histórica, série, janela) |
 | Nível | RN019–RN021 | Atendidas (vigia: limiar 30 cm, cooldown 30 min, extremo ≥ 100 cm) |
 | Batimetria e Correnteza | RN024, RN025, RN028 | Parcialmente apoiadas nos dados (cota de fundo, vazão, largura) |
-| Sincronização | RN016–RN018, RN026, RN027 | Parcial — RN016/RN017/RN018 via `useOfflineStore`; RN026/RN027 pendentes |
+| Sincronização | RN016–RN018, RN026, RN027 | Atendidas — RN016/RN017/RN018 via `useOfflineStore`; RN026 (paridade offline×backend) e RN027 (fallback de polling) implementadas |
 
 ---
 

@@ -3,16 +3,31 @@ import { reactive, ref } from 'vue'
 
 import BaseButton from '@/components/ui/BaseButton.vue'
 import { ApiProblem } from '@/services/http'
+import { useOfflineStore } from '@/stores/offline'
 import { useSessionStore } from '@/stores/session'
 import { useUiStore } from '@/stores/ui'
+import { formatarDataHora } from '@/utils/formato'
 
 const ui = useUiStore()
 const session = useSessionStore()
+const offline = useOfflineStore()
 
 const perfil = reactive({ nome: session.usuario?.nome ?? '', senha: '' })
 const salvando = ref(false)
 const erro = ref<string | null>(null)
 const aviso = ref<string | null>(null)
+const baixando = ref(false)
+const avisoOffline = ref<string | null>(null)
+
+async function baixarOffline(): Promise<void> {
+  baixando.value = true
+  avisoOffline.value = null
+  const ok = await offline.baixarSnapshot()
+  avisoOffline.value = ok
+    ? 'Dados de rota baixados para uso offline.'
+    : 'Não foi possível baixar os dados offline.'
+  baixando.value = false
+}
 
 async function salvarPerfil(): Promise<void> {
   salvando.value = true
@@ -67,6 +82,26 @@ async function salvarPerfil(): Promise<void> {
         </div>
         <BaseButton variante="secundaria" @click="ui.ciclarFonte()">Aumentar</BaseButton>
       </div>
+    </section>
+
+    <section class="max-w-lg space-y-4 rounded-lg border border-edge bg-surface-elevated p-4">
+      <div>
+        <h2 class="text-lg font-semibold">Dados offline</h2>
+        <p class="text-sm text-ink-muted">
+          Baixe o grafo de rotas para calcular rotas sem conexão.
+        </p>
+      </div>
+      <p class="text-xs text-ink-muted">
+        Snapshot:
+        <template v-if="offline.temSnapshot">
+          disponível (gerado em {{ formatarDataHora(offline.snapshotGeradoEm) }})
+        </template>
+        <template v-else>não baixado</template>
+      </p>
+      <BaseButton variante="secundaria" :desabilitado="baixando" @click="baixarOffline">
+        {{ baixando ? 'Baixando…' : 'Baixar dados offline' }}
+      </BaseButton>
+      <p v-if="avisoOffline" role="status" class="text-sm text-ink-muted">{{ avisoOffline }}</p>
     </section>
 
     <section v-if="session.autenticado" class="max-w-lg space-y-4">

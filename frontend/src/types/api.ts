@@ -194,3 +194,13 @@ export type EventoRota = {
   variacao_nivel_cm?: number
   nova_distancia_km?: number
 }
+
+export type SnapshotGrafo = {
+  gerado_em: string
+  area: string
+  total_nos: number
+  total_arestas: number
+  nos: [number, number, number][]
+  arestas: [number, number, number, number, number | null][]
+  estacoes: [string, number][]
+}

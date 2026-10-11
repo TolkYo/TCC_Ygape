@@ -17,6 +17,7 @@ import type {
   RouteRequest,
   RouteResult,
   SalvarRotaInput,
+  SnapshotGrafo,
   Usuario,
 } from '@/types/api'
 
@@ -42,4 +43,6 @@ export const api = {
   monitorarRota: (id: number, monitorar: boolean) =>
     http.post<MonitorResultado>(`/rotas/${id}/monitorar`, { monitorar }),
   listarAlteracoes: (id: number) => http.get<ListaAlteracoes>(`/rotas/${id}/alteracoes`),
+  snapshot: (bbox?: string) =>
+    http.get<SnapshotGrafo>(`/sync/snapshot${bbox ? `?bbox=${encodeURIComponent(bbox)}` : ''}`),
 }

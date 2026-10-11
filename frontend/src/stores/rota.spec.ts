@@ -16,8 +16,10 @@ vi.mock('@/services/endpoints', () => ({
 }))
 
 import { api } from '@/services/endpoints'
+import { guardarSnapshot, limparCache } from '@/services/cache'
 import { ApiProblem } from '@/services/http'
 
+import { useEstacoesStore } from './estacoes'
 import { useRotaStore } from './rota'
 
 const apiMock = vi.mocked(api)
@@ -149,6 +151,47 @@ describe('store de rota', () => {
     expect(apiMock.monitorarRota).toHaveBeenCalledWith(1, true)
     expect(resultado?.monitorar).toBe(true)
     expect(store.historico[0]?.monitorar).toBe(true)
+  })
+
+  it('calcula offline quando a API está inacessível e há snapshot', async () => {
+    await limparCache()
+    const store = useRotaStore()
+    const est = useEstacoesStore()
+    est.itens = [
+      { codigo_estacao: 'A', nome_estacao: 'ORIGEM' } as never,
+      { codigo_estacao: 'B', nome_estacao: 'DESTINO' } as never,
+    ]
+    store.parametros = {
+      origem_nome: 'ORIGEM',
+      destino_nome: 'DESTINO',
+      calado_m: 0.5,
+      margem_seguranca_m: 0,
+      velocidade_embarcacao_kmh: 12,
+    }
+    await guardarSnapshot(
+      {
+        gerado_em: 'x',
+        area: 't',
+        total_nos: 2,
+        total_arestas: 1,
+        nos: [
+          [1, -60, -3],
+          [2, -60.1, -3],
+        ],
+        arestas: [[1, 1, 2, 10, 5]],
+        estacoes: [
+          ['A', 1],
+          ['B', 1],
+        ],
+      },
+      'x',
+    )
+    apiMock.calcularRota.mockRejectedValue(new TypeError('rede fora'))
+
+    await store.calcular()
+
+    expect(store.calculadoOffline).toBe(true)
+    expect(store.resultado?.distancia_total_km).toBe(10)
   })
 
   it('limpa o resultado e o id salvo ao inverter', () => {
