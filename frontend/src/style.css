@@ -1,0 +1,61 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-surface: #f6f9fc;
+  --color-surface-elevated: #ffffff;
+  --color-surface-muted: #eaf0f7;
+  --color-ink: #0f1b2d;
+  --color-ink-muted: #55657d;
+  --color-edge: #d5deea;
+  --color-primary: #0b6bcb;
+  --color-primary-strong: #084b90;
+  --color-success: #1a7f4b;
+  --color-warning: #b7791f;
+  --color-danger: #c0342b;
+  --color-info: #2b6cb0;
+  --color-unknown: #6b7280;
+
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+:root {
+  color-scheme: light dark;
+}
+
+html.dark {
+  --color-surface: #0e1420;
+  --color-surface-elevated: #161e2e;
+  --color-surface-muted: #1f2937;
+  --color-ink: #e7edf5;
+  --color-ink-muted: #a7b4c7;
+  --color-edge: #2b3648;
+}
+
+html.contrast-high {
+  --color-surface: #ffffff;
+  --color-surface-elevated: #ffffff;
+  --color-ink: #000000;
+  --color-ink-muted: #1f2933;
+  --color-edge: #000000;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background-color: var(--color-surface);
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

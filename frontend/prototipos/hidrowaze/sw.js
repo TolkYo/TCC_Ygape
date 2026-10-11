@@ -1,7 +1,7 @@
-const CACHE_NAME = 'hidrowize-shell-v1';
+const CACHE_NAME = 'hidrowize-shell-v4';
 const RUNTIME_CACHE = 'hidrowize-runtime-v1';
 const SHELL = [
-  './', './index.html', './admin.html', './styles.css', './app.js', './api.js', './map.js', './manifest.json', './icon.svg'
+  './', './index.html', './admin.html', './rede-hidroviaria.html', './capitao-teste.html', './styles.css', './rede-hidroviaria.css', './capitao-teste.css', './app.js', './api.js', './map.js', './rede-hidroviaria.js', './capitao-teste.js', './manifest.json', './icon.svg'
 ];
 
 self.addEventListener('install', event => {

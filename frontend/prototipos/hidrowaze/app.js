@@ -90,8 +90,38 @@
     if (!sel) return;
     sel.innerHTML = '<option value="">Selecione um porto</option>' + locais.map(l=> `<option value="${l}" ${l===selected?'selected':''}>${l}</option>`).join('');
   }
+
+  function renderPortos(){
+    const wrap = document.getElementById('listaPortos');
+    const total = document.getElementById('totalPortos');
+    if (!wrap) return;
+    if (total) total.textContent = `${locais.length} ${locais.length === 1 ? 'porto' : 'portos'}`;
+    if (!locais.length) {
+      wrap.innerHTML = '<p class="small text-secondary mb-0" role="status">Nenhum porto disponível. Atualize os dados para carregar a lista.</p>';
+      return;
+    }
+    wrap.innerHTML = locais.map(local => `
+      <article class="hw-port-item" role="listitem">
+        <span class="hw-port-item__name"><i class="bi bi-geo-alt-fill" aria-hidden="true"></i>${local}</span>
+        <span class="hw-port-item__actions">
+          <button class="btn btn-sm btn-outline-success" type="button" data-port-role="origem" data-port-name="${local}">Origem</button>
+          <button class="btn btn-sm btn-outline-danger" type="button" data-port-role="destino" data-port-name="${local}">Destino</button>
+        </span>
+      </article>`).join('');
+  }
+
+  document.getElementById('listaPortos')?.addEventListener('click', event => {
+    const button = event.target.closest('button[data-port-role]');
+    if (!button) return;
+    const select = button.dataset.portRole === 'origem' ? selO : selD;
+    select.value = button.dataset.portName;
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+    announce(`${button.dataset.portName} definido como ${button.dataset.portRole}.`);
+  });
+
   optionList(selO, '');
   optionList(selD, '');
+  renderPortos();
 
   const caladoEl = document.getElementById('calado');
   const velEl = document.getElementById('velocidade');
@@ -190,6 +220,7 @@
       locais = [...new Set(state.estacoes.map(e => e.nome).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
       optionList(selO, selO.value);
       optionList(selD, selD.value);
+      renderPortos();
       renderEstacoes();
       setApiStatus('Estações atualizadas pela API.', true);
       return true;

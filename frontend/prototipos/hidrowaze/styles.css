@@ -146,6 +146,34 @@ html.hw-contrast a{ color:#ffbf00; }
 .hw-fieldset{ border:1px solid var(--hw-border); border-radius:14px; padding:1rem; margin:0; background:#fcfdff; }
 .hw-fieldset legend{ font-size:.9rem; font-weight:800; padding:0 .4rem; width:auto; float:none; }
 
+/* ---------- Portos disponíveis ---------- */
+.hw-ports-card{
+  border:1px solid var(--hw-border); border-radius:14px; background:#fcfdff; overflow:hidden;
+}
+.hw-ports-card__head{
+  display:flex; justify-content:space-between; align-items:flex-start; gap:.75rem;
+  padding:.9rem 1rem; border-bottom:1px solid var(--hw-border); background:#f7fafc;
+}
+.hw-ports-list{
+  max-height:250px; overflow-y:auto; overscroll-behavior:contain; padding:.35rem .55rem;
+  scrollbar-gutter:stable;
+}
+.hw-port-item{
+  display:flex; align-items:center; justify-content:space-between; gap:.75rem; padding:.65rem .45rem;
+  border-bottom:1px solid #e8eef4;
+}
+.hw-port-item:last-child{ border-bottom:0; }
+.hw-port-item__name{ min-width:0; overflow-wrap:anywhere; font-weight:700; font-size:.9rem; }
+.hw-port-item__name i{ color:var(--hw-primary); margin-right:.4rem; }
+.hw-port-item__actions{ display:flex; flex:0 0 auto; gap:.35rem; }
+.hw-port-item__actions .btn{ min-height:34px; font-weight:700; }
+@media (max-width:420px){
+  .hw-ports-card__head{ align-items:center; }
+  .hw-port-item{ align-items:flex-start; flex-direction:column; gap:.45rem; }
+  .hw-port-item__actions{ width:100%; }
+  .hw-port-item__actions .btn{ flex:1; }
+}
+
 /* ---------- Resultado ---------- */
 .hw-result-head{border-bottom:1px solid var(--hw-border)}
 .hw-result-toggle{

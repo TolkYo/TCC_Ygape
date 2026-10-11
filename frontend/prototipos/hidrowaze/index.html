@@ -139,6 +139,19 @@
                 <div id="help-destino" class="visually-hidden">Selecione o destino, por exemplo Itacoatiara.</div>
               </fieldset>
 
+              <section class="hw-ports-card mb-3" aria-labelledby="tituloPortos">
+                <div class="hw-ports-card__head">
+                  <div>
+                    <h3 id="tituloPortos" class="h6 fw-bold mb-1"><i class="bi bi-water me-1" aria-hidden="true"></i> Portos disponíveis</h3>
+                    <p class="small text-secondary mb-0">Role a lista e escolha cada local como origem ou destino.</p>
+                  </div>
+                  <span id="totalPortos" class="badge text-bg-light border" aria-live="polite">0 portos</span>
+                </div>
+                <div id="listaPortos" class="hw-ports-list" role="list" aria-label="Lista de portos disponíveis" aria-live="polite">
+                  <p class="small text-secondary mb-0" role="status">Carregando portos pela API…</p>
+                </div>
+              </section>
+
               <fieldset class="hw-fieldset mb-3">
                 <legend><i class="bi bi-life-preserver me-1" aria-hidden="true"></i> Embarcação</legend>
                 <div class="row g-3">

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#11161c">
+  <meta name="description" content="Estudo visual de rede hidroviária para o Ygapé.">
+  <title>Ygapé · Rede hidroviária</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link href="./rede-hidroviaria.css" rel="stylesheet">
+</head>
+<body>
+  <a class="rn-skip" href="#conteudo">Ir para o mapa</a>
+  <header class="rn-header">
+    <a class="rn-brand" href="./index.html" aria-label="Voltar ao planejador de rotas Ygapé">
+      <span class="rn-brand-mark" aria-hidden="true">Y</span>
+      <span>YGAPÉ <small>REDE HIDROVIÁRIA</small></span>
+    </a>
+    <nav class="rn-nav" aria-label="Navegação da visualização">
+      <a href="./index.html"><i class="bi bi-arrow-left" aria-hidden="true"></i> Planejador</a>
+      <button type="button" class="rn-icon-button" id="btnCamadas" aria-pressed="true"><i class="bi bi-layers" aria-hidden="true"></i><span>Camadas</span></button>
+    </nav>
+  </header>
+
+  <main id="conteudo" class="rn-main">
+    <section class="rn-intro" aria-labelledby="tituloPagina">
+      <p class="rn-eyebrow"><span></span> Bacia Amazônica · atualização de hoje às 08:40</p>
+      <h1 id="tituloPagina">Navegue a rede.<br><em>Leia o rio.</em></h1>
+      <p class="rn-lead">Uma visão esquemática dos principais trechos navegáveis, condições de profundidade e conexões entre portos.</p>
+    </section>
+
+    <section class="rn-workspace" aria-label="Mapa e informações operacionais">
+      <aside class="rn-panel rn-panel-route" aria-labelledby="tituloRota">
+        <div class="rn-panel-label">ROTA ATIVA</div>
+        <h2 id="tituloRota">Manaus <i class="bi bi-arrow-right" aria-hidden="true"></i> Itacoatiara</h2>
+        <div class="rn-route-stats">
+          <div><strong>194</strong><span>km</span></div>
+          <div><strong>08:40</strong><span>estimado</span></div>
+          <div><strong class="rn-safe">8,6</strong><span>segurança</span></div>
+        </div>
+        <button type="button" class="rn-primary" id="btnRota"><i class="bi bi-signpost-2" aria-hidden="true"></i> Ver detalhes da rota</button>
+      </aside>
+
+      <section class="rn-map-card" aria-labelledby="tituloMapa">
+        <div class="rn-map-head">
+          <div><p class="rn-panel-label">MAPA DE FLUXO</p><h2 id="tituloMapa">Corredores navegáveis</h2></div>
+          <span class="rn-map-scale">NÃO GEOGRÁFICO</span>
+        </div>
+        <div class="rn-map" id="mapaRede" role="img" aria-label="Diagrama da rede hidroviária entre Manaus, Iranduba, Itacoatiara, Parintins, Tefé e Tabatinga">
+          <svg viewBox="0 0 900 530" aria-hidden="true" focusable="false">
+            <g class="rn-grid"><path d="M55 80H845M55 175H845M55 270H845M55 365H845M55 460H845"/><path d="M120 35V495M275 35V495M430 35V495M585 35V495M740 35V495"/></g>
+            <g class="rn-line rn-line--negro"><path d="M130 270H290Q345 270 345 215V160Q345 125 390 125H495"/></g>
+            <g class="rn-line rn-line--solimoes"><path d="M130 270H290Q345 270 345 325V390Q345 430 405 430H705Q760 430 760 370V285"/></g>
+            <g class="rn-line rn-line--amazonas"><path d="M290 270H525Q565 270 565 310V340Q565 370 605 370H780"/></g>
+            <g class="rn-line rn-line--madeira"><path d="M130 270H165Q205 270 205 330V470"/></g>
+            <g class="rn-line rn-line--japura"><path d="M495 125H650Q690 125 690 85V55"/></g>
+            <g class="rn-stops">
+              <g class="rn-stop rn-stop--origin" tabindex="0" data-port="Manaus"><circle cx="130" cy="270" r="13"/><text x="130" y="306">MANAUS</text><text class="rn-stop-sub" x="130" y="325">PORTO PRINCIPAL</text></g>
+              <g class="rn-stop" tabindex="0" data-port="Iranduba"><circle cx="205" cy="270" r="8"/><text x="205" y="245">IRANDUBA</text></g>
+              <g class="rn-stop" tabindex="0" data-port="Itacoatiara"><circle cx="290" cy="270" r="11"/><text x="290" y="306">ITACOATIARA</text><text class="rn-stop-sub" x="290" y="325">NÍVEL 5,84 M</text></g>
+              <g class="rn-stop" tabindex="0" data-port="Parintins"><circle cx="525" cy="270" r="8"/><text x="525" y="245">PARINTINS</text></g>
+              <g class="rn-stop" tabindex="0" data-port="Santarém"><circle cx="780" cy="370" r="8"/><text x="780" y="405">SANTARÉM</text></g>
+              <g class="rn-stop" tabindex="0" data-port="Tefé"><circle cx="405" cy="430" r="8"/><text x="405" y="465">TEFÉ</text></g>
+              <g class="rn-stop" tabindex="0" data-port="Tabatinga"><circle cx="705" cy="430" r="8"/><text x="705" y="465">TABATINGA</text></g>
+              <g class="rn-stop" tabindex="0" data-port="Novo Airão"><circle cx="390" cy="125" r="8"/><text x="390" y="101">NOVO AIRÃO</text></g>
+              <g class="rn-stop" tabindex="0" data-port="Tefé Norte"><circle cx="495" cy="125" r="8"/><text x="495" y="101">TEFÉ NORTE</text></g>
+            </g>
+          </svg>
+          <div class="rn-map-tip" id="mapaDica" role="status">Selecione um porto para ver a condição do trecho.</div>
+        </div>
+        <div class="rn-legend" aria-label="Legenda do mapa">
+          <span><i class="rn-dot rn-dot--blue"></i> Amazonas</span><span><i class="rn-dot rn-dot--orange"></i> Solimões</span><span><i class="rn-dot rn-dot--pink"></i> Rio Negro</span><span><i class="rn-dot rn-dot--green"></i> Madeira</span>
+        </div>
+      </section>
+
+      <aside class="rn-panel rn-panel-status" aria-labelledby="tituloStatus">
+        <div class="rn-panel-label">SITUAÇÃO DA REDE</div>
+        <h2 id="tituloStatus">Condições por trecho</h2>
+        <ul class="rn-status-list">
+          <li><span class="rn-status-line rn-status-line--blue"></span><div><strong>Amazonas</strong><small>12 trechos monitorados</small></div><b>Normal</b></li>
+          <li><span class="rn-status-line rn-status-line--orange"></span><div><strong>Solimões</strong><small>8 trechos monitorados</small></div><b class="rn-warning">Atenção</b></li>
+          <li><span class="rn-status-line rn-status-line--pink"></span><div><strong>Rio Negro</strong><small>6 trechos monitorados</small></div><b>Normal</b></li>
+        </ul>
+        <a class="rn-text-link" href="./index.html#formRota">Planejar outra rota <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
+      </aside>
+    </section>
+
+    <section class="rn-bottom" aria-label="Resumo operacional">
+      <article><span class="rn-kicker">PROFUNDIDADE MÍNIMA</span><strong>2,30 <small>m</small></strong><p>Margem de segurança aplicada.</p></article>
+      <article><span class="rn-kicker">PORTOS CONECTADOS</span><strong>09</strong><p>Disponíveis nesta visualização.</p></article>
+      <article class="rn-alert-card"><span class="rn-kicker">AVISO OPERACIONAL</span><p><i class="bi bi-exclamation-circle" aria-hidden="true"></i> Rio Solimões com redução de calado em dois trechos.</p><button type="button" id="btnAlerta">Ver alertas</button></article>
+    </section>
+  </main>
+  <div id="rnToast" class="rn-toast" role="status" aria-live="polite"></div>
+  <script src="./rede-hidroviaria.js"></script>
+</body>
+</html>
