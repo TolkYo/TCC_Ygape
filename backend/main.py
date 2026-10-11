@@ -26,6 +26,7 @@ import psycopg2
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Request, WebSocket, WebSocketDisconnect, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from psycopg2.extras import Json
@@ -229,6 +230,7 @@ class MonitorInput(BaseModel):
 app = FastAPI(title="HidroWize API", version="0.1.0", openapi_url="/api/v1/openapi.json", docs_url="/api/v1/docs")
 origins = [item.strip() for item in os.getenv("HIDROWIZE_CORS_ORIGINS", "http://localhost:8000,http://localhost:8080,http://127.0.0.1:8080").split(",")]
 app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(GZipMiddleware, minimum_size=100000)
 
 
 @app.on_event("startup")
@@ -813,3 +815,62 @@ def monitor_executar(_: dict = Depends(admin_user)):
     for usuario_id, evento in eventos:
         bus.publish(usuario_id, evento)
     return ok({"eventos": len(eventos), "itens": [ev for _, ev in eventos]})
+
+
+@app.get("/api/v1/sync/snapshot")
+def sync_snapshot(bbox: str | None = None, _: dict = Depends(current_user)):
+    """Snapshot compacto do grafo para o calculo offline (RF022).
+
+    `bbox` opcional no formato 'minx,miny,maxx,maxy' (WGS84) limita o subgrafo.
+    """
+    clausula = "WHERE geom IS NOT NULL"
+    params: list = []
+    if bbox:
+        try:
+            minx, miny, maxx, maxy = (float(valor) for valor in bbox.split(","))
+        except (ValueError, TypeError):
+            raise ApiProblem(422, "invalid_bbox", "bbox deve ser 'minx,miny,maxx,maxy'.")
+        clausula += " AND ST_Intersects(geom, ST_MakeEnvelope(%s,%s,%s,%s,4326))"
+        params = [minx, miny, maxx, maxy]
+
+    with connection() as con:
+        with con.cursor() as cur:
+            cur.execute(
+                "SELECT fid,noorigem,nodestino,hig_drn_depth_m AS depth,"
+                "ST_X(ST_StartPoint(ST_GeometryN(geom,1))) AS lon_o,"
+                "ST_Y(ST_StartPoint(ST_GeometryN(geom,1))) AS lat_o,"
+                "ST_X(ST_EndPoint(ST_GeometryN(geom,ST_NumGeometries(geom)))) AS lon_d,"
+                "ST_Y(ST_EndPoint(ST_GeometryN(geom,ST_NumGeometries(geom)))) AS lat_d,"
+                "ST_Length(geom::geography)/1000.0 AS distancia_km "
+                f"FROM trechos_navegaveis {clausula}",
+                params,
+            )
+            nos: dict[int, list[float]] = {}
+            arestas: list[list] = []
+            fids: set[int] = set()
+            for row in cur.fetchall():
+                fid = int(row["fid"])
+                origem = int(row["noorigem"])
+                destino = int(row["nodestino"])
+                if row["lon_o"] is not None and origem not in nos:
+                    nos[origem] = [round(float(row["lon_o"]), 5), round(float(row["lat_o"]), 5)]
+                if row["lon_d"] is not None and destino not in nos:
+                    nos[destino] = [round(float(row["lon_d"]), 5), round(float(row["lat_d"]), 5)]
+                arestas.append([
+                    fid, origem, destino,
+                    round(float(row["distancia_km"]), 4),
+                    float(row["depth"]) if row["depth"] is not None else None,
+                ])
+                fids.add(fid)
+            cur.execute("SELECT codigo_estacao,fid_trecho FROM estacoes_trechos")
+            estacoes = [[str(row["codigo_estacao"]), int(row["fid_trecho"])] for row in cur.fetchall() if int(row["fid_trecho"]) in fids]
+
+    return ok({
+        "gerado_em": datetime.now().isoformat(timespec="seconds"),
+        "area": "hidrovias_navegaveis_bhae",
+        "total_nos": len(nos),
+        "total_arestas": len(arestas),
+        "nos": [[nid, coord[0], coord[1]] for nid, coord in nos.items()],
+        "arestas": arestas,
+        "estacoes": estacoes,
+    })
