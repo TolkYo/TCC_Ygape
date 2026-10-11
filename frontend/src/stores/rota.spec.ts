@@ -10,6 +10,8 @@ vi.mock('@/services/endpoints', () => ({
     listarRotas: vi.fn(),
     obterRota: vi.fn(),
     removerRota: vi.fn(),
+    monitorarRota: vi.fn(),
+    listarAlteracoes: vi.fn(),
   },
 }))
 
@@ -128,6 +130,25 @@ describe('store de rota', () => {
 
     await expect(store.remover(1)).resolves.toBe(true)
     expect(store.historico.map((item) => item.id)).toEqual([2])
+  })
+
+  it('ativa o monitoramento de uma rota', async () => {
+    const store = useRotaStore()
+    store.historico = [rotaSalva({ id: 1, monitorar: false })]
+    apiMock.monitorarRota.mockResolvedValue({
+      rota_id: 1,
+      monitorar: true,
+      estacao_referencia: '16030000',
+      nivel_baseline_cm: 500,
+      limiar_variacao_cm: 30,
+      cooldown_min: 30,
+    })
+
+    const resultado = await store.monitorar(1, true)
+
+    expect(apiMock.monitorarRota).toHaveBeenCalledWith(1, true)
+    expect(resultado?.monitorar).toBe(true)
+    expect(store.historico[0]?.monitorar).toBe(true)
   })
 
   it('limpa o resultado e o id salvo ao inverter', () => {

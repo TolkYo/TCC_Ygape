@@ -107,11 +107,11 @@ Em termos de etapas:
 
 | ID | Requisito | Status | Observação |
 |----|-----------|--------|------------|
-| RF027 | Ativar monitoramento de rota | Não iniciado | — |
-| RF028 | Recálculo automático por variação ≥ 30 cm | Não iniciado | Regra definida (RN020/RN021), sem implementação |
-| RF029 | Notificação em tempo real | Não iniciado | — |
-| RF034 | Canal WebSocket/SSE por usuário | Não iniciado | — |
-| RF030 | Histórico de alterações da rota | Não iniciado | — |
+| RF027 | Ativar monitoramento de rota | Atendido | `POST /rotas/{id}/monitorar` + botão "Monitorar" no histórico |
+| RF028 | Recálculo automático por variação ≥ 30 cm | Atendido | job de vigia (`monitor_loop`): limiar 30 cm, cooldown 30 min, evento extremo ≥ 100 cm |
+| RF029 | Notificação em tempo real | Atendido | evento `rota_alterada` publicado no barramento |
+| RF034 | Canal WebSocket/SSE por usuário | Atendido | `WS /api/v1/ws?token=` + `useNotificacaoStore` (reconexão automática) |
+| RF030 | Histórico de alterações da rota | Atendido | tabela `rota_alteracao` + `GET /rotas/{id}/alteracoes` |
 
 ### 3.8 Relatórios e Auditoria
 
@@ -157,7 +157,7 @@ Em termos de etapas:
 | Estação | RN006–RN008 | Parcialmente atendidas nos coletores (código único, coleta padronizada) |
 | Rota | RN009–RN012, RN022, RN023, RN029 | RN010/RN011/RN012 integradas no motor; RN022/RN023 em aberto |
 | Nível | RN013–RN015 | Atendidas nos dados (mínima histórica, série, janela) |
-| Nível | RN019–RN021 | Não implementadas (dependem do monitoramento) |
+| Nível | RN019–RN021 | Atendidas (vigia: limiar 30 cm, cooldown 30 min, extremo ≥ 100 cm) |
 | Batimetria e Correnteza | RN024, RN025, RN028 | Parcialmente apoiadas nos dados (cota de fundo, vazão, largura) |
 | Sincronização | RN016–RN018, RN026, RN027 | Parcial — RN016/RN017/RN018 via `useOfflineStore`; RN026/RN027 pendentes |
 
@@ -187,7 +187,7 @@ Em termos de etapas:
 ### 6.3 Etapas de produto ainda ausentes
 
 - Cálculo de rota offline (RF022) e paridade offline×backend (RN026) — dependem de subgrafo simplificado.
-- Monitoramento de rota e notificações em tempo real (RF027–RF030, RF034).
+- Publicação do frontend e domínio público do Ygapé.
 - Empacotamento mobile (Capacitor) e plano de testes (ISO/IEC 25010).
 
 ---

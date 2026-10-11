@@ -164,3 +164,33 @@ export type RotaSalva = {
 }
 
 export type ListaRotas = { items: RotaSalva[]; total: number }
+
+export type AlteracaoRota = {
+  id: number
+  data_alteracao: string
+  motivo: string
+  variacao_nivel_cm: number | null
+  estacao_origem: string | null
+  distancia_total_km: number | null
+  custo_total: number | null
+  rota_geojson: GeoJsonFeatureCollection | null
+}
+
+export type ListaAlteracoes = { items: AlteracaoRota[] }
+
+export type MonitorResultado = {
+  rota_id: number
+  monitorar: boolean
+  estacao_referencia: string | null
+  nivel_baseline_cm: number | null
+  limiar_variacao_cm: number
+  cooldown_min: number
+}
+
+export type EventoRota = {
+  evento: string
+  rota_id?: number
+  motivo?: string
+  variacao_nivel_cm?: number
+  nova_distancia_km?: number
+}

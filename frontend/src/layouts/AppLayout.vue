@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onUnmounted, watch } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
 
+import { useNotificacaoStore } from '@/stores/notificacao'
 import { useOfflineStore } from '@/stores/offline'
 import { useSessionStore } from '@/stores/session'
 import { useUiStore } from '@/stores/ui'
@@ -10,11 +11,26 @@ import { formatarDataHora } from '@/utils/formato'
 const session = useSessionStore()
 const ui = useUiStore()
 const offline = useOfflineStore()
+const notificacao = useNotificacaoStore()
 
 const nomeUsuario = computed(() => session.usuario?.nome ?? 'Visitante')
 const ultimaSync = computed(() =>
   offline.ultimaSincronizacao ? formatarDataHora(offline.ultimaSincronizacao) : 'nunca',
 )
+
+watch(
+  () => session.autenticado,
+  (autenticado) => {
+    if (autenticado) {
+      notificacao.conectar()
+    } else {
+      notificacao.desconectar()
+    }
+  },
+  { immediate: true },
+)
+
+onUnmounted(() => notificacao.desconectar())
 </script>
 
 <template>
@@ -153,5 +169,26 @@ const ultimaSync = computed(() =>
     <footer class="border-t border-edge px-4 py-4 text-center text-xs text-ink-muted">
       Ygapé — ferramenta de apoio ao planejamento. Não substitui cartas e procedimentos oficiais.
     </footer>
+
+    <div
+      v-if="notificacao.avisos.length"
+      class="fixed bottom-4 right-4 z-40 w-80 max-w-[90vw] space-y-2"
+      aria-live="polite"
+    >
+      <div
+        v-for="aviso in notificacao.avisos"
+        :key="aviso.id"
+        class="rounded-lg border border-warning/40 bg-surface-elevated p-3 text-sm shadow-lg"
+      >
+        <p class="text-ink">{{ aviso.texto }}</p>
+        <button
+          type="button"
+          class="mt-2 text-xs font-medium text-primary underline"
+          @click="notificacao.limparAviso(aviso.id)"
+        >
+          Fechar
+        </button>
+      </div>
+    </div>
   </div>
 </template>

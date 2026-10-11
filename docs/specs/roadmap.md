@@ -29,10 +29,10 @@
 - [ ] RF016 — Endpoint POST /rotas/calcular (com velocidade da embarcacao)
 - [ ] RF017 — Retorno em GeoJSON
 - [ ] RF015 — Mapa de profundidades estimadas
-- [ ] RF027 — Ativar/desativar monitoramento de rota
-- [ ] RF028 — Recomputacao automatica por variacao >= 30cm (RN020/RN021)
-- [ ] RF029 — Notificacao de rota alterada
-- [ ] RF030 — Historico de alteracoes da rota monitorada
+- [x] RF027 — Ativar/desativar monitoramento de rota
+- [x] RF028 — Recomputacao automatica por variacao >= 30cm (RN020/RN021)
+- [x] RF029 — Notificacao de rota alterada
+- [x] RF030 — Historico de alteracoes da rota monitorada
 
 ## Fase 3 — API Completa e Auth
 
@@ -64,10 +64,10 @@
 
 ## Fase 5b — Notificacoes em Tempo Real
 
-- [ ] RF034 — Canal WebSocket/SSE por usuario (FastAPI WebSocket)
-- [ ] RF029 — Entrega do evento `rota_alterada` em tempo real
-- [ ] RN027 — Fallback de polling quando WS indisponivel
-- [ ] useNotificacaoStore + reconexao automatica no frontend
+- [x] RF034 — Canal WebSocket/SSE por usuario (FastAPI WebSocket)
+- [x] RF029 — Entrega do evento `rota_alterada` em tempo real
+- [x] RN027 — Fallback de polling quando WS indisponivel
+- [x] useNotificacaoStore + reconexao automatica no frontend
 
 ## Fase 6 — Polimento e Empacotamento
 

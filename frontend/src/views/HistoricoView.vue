@@ -5,14 +5,16 @@ import { RouterLink } from 'vue-router'
 import RiverMap from '@/components/map/RiverMap.vue'
 import RouteSummary from '@/components/route/RouteSummary.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import StatusBadge from '@/components/ui/StatusBadge.vue'
 import { useEstacoesStore } from '@/stores/estacoes'
 import { useRotaStore } from '@/stores/rota'
-import type { RotaSalva, RouteResult } from '@/types/api'
+import type { AlteracaoRota, RotaSalva, RouteResult } from '@/types/api'
 import { formatarDataHora, formatarNumero } from '@/utils/formato'
 
 const rota = useRotaStore()
 const estacoes = useEstacoesStore()
 const expandida = ref<number | null>(null)
+const alteracoesPorRota = ref<Record<number, AlteracaoRota[]>>({})
 
 onMounted(() => {
   rota.carregarHistorico()
@@ -34,8 +36,26 @@ function resultadoDaRota(item: RotaSalva): RouteResult {
   }
 }
 
-function alternar(id: number): void {
-  expandida.value = expandida.value === id ? null : id
+async function carregarAlteracoes(id: number): Promise<void> {
+  alteracoesPorRota.value = { ...alteracoesPorRota.value, [id]: await rota.alteracoes(id) }
+}
+
+async function alternar(item: RotaSalva): Promise<void> {
+  if (expandida.value === item.id) {
+    expandida.value = null
+    return
+  }
+  expandida.value = item.id
+  if (item.monitorar) {
+    await carregarAlteracoes(item.id)
+  }
+}
+
+async function alternarMonitoramento(item: RotaSalva): Promise<void> {
+  const resultado = await rota.monitorar(item.id, !item.monitorar)
+  if (resultado?.monitorar) {
+    await carregarAlteracoes(item.id)
+  }
 }
 
 async function remover(id: number): Promise<void> {
@@ -84,8 +104,9 @@ async function remover(id: number): Promise<void> {
       >
         <div class="flex flex-wrap items-center justify-between gap-3 p-4">
           <div class="min-w-0">
-            <p class="font-medium">
+            <p class="flex flex-wrap items-center gap-2 font-medium">
               {{ item.origem_nome }} → {{ item.destino_nome }}
+              <StatusBadge v-if="item.monitorar" tom="info" label="Monitorando" />
             </p>
             <p class="text-xs text-ink-muted">
               {{ formatarDataHora(item.created_at) }} · calado
@@ -95,7 +116,10 @@ async function remover(id: number): Promise<void> {
             </p>
           </div>
           <div class="flex items-center gap-2">
-            <BaseButton variante="secundaria" @click="alternar(item.id)">
+            <BaseButton variante="secundaria" @click="alternarMonitoramento(item)">
+              {{ item.monitorar ? 'Parar de monitorar' : 'Monitorar' }}
+            </BaseButton>
+            <BaseButton variante="secundaria" @click="alternar(item)">
               {{ expandida === item.id ? 'Ocultar' : 'Detalhes' }}
             </BaseButton>
             <BaseButton variante="perigo" @click="remover(item.id)">Remover</BaseButton>
@@ -104,6 +128,21 @@ async function remover(id: number): Promise<void> {
 
         <div v-if="expandida === item.id" class="space-y-3 border-t border-edge p-4">
           <RouteSummary :resultado="resultadoDaRota(item)" />
+
+          <div v-if="item.monitorar">
+            <h3 class="mb-1 text-sm font-semibold">Alterações monitoradas</h3>
+            <p v-if="!alteracoesPorRota[item.id]?.length" class="text-sm text-ink-muted">
+              Sem alterações registradas até agora.
+            </p>
+            <ul v-else class="space-y-1 text-sm text-ink-muted">
+              <li v-for="alt in alteracoesPorRota[item.id]" :key="alt.id">
+                {{ formatarDataHora(alt.data_alteracao) }} · {{ alt.motivo }}
+                ({{ formatarNumero(alt.variacao_nivel_cm, 0) }} cm ·
+                {{ formatarNumero(alt.distancia_total_km) }} km)
+              </li>
+            </ul>
+          </div>
+
           <RiverMap
             v-if="item.rota_geojson"
             :estacoes="estacoes.itens"

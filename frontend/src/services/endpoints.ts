@@ -5,11 +5,13 @@ import type {
   ColetaInput,
   CriarUsuarioInput,
   GrafoStatus,
+  ListaAlteracoes,
   ListaEstacoes,
   ListaLogs,
   ListaRotas,
   ListaUsuarios,
   LoginResult,
+  MonitorResultado,
   PerfilUpdateInput,
   RotaSalva,
   RouteRequest,
@@ -37,4 +39,7 @@ export const api = {
   listarRotas: () => http.get<ListaRotas>('/rotas'),
   obterRota: (id: number) => http.get<RotaSalva>(`/rotas/${id}`),
   removerRota: (id: number) => http.delete<{ id: number; removida: boolean }>(`/rotas/${id}`),
+  monitorarRota: (id: number, monitorar: boolean) =>
+    http.post<MonitorResultado>(`/rotas/${id}/monitorar`, { monitorar }),
+  listarAlteracoes: (id: number) => http.get<ListaAlteracoes>(`/rotas/${id}/alteracoes`),
 }

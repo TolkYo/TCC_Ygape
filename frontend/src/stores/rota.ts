@@ -5,7 +5,7 @@ import { guardarRotas, lerRotas as lerRotasCache } from '@/services/cache'
 import { api } from '@/services/endpoints'
 import { ApiProblem } from '@/services/http'
 import { useOfflineStore } from '@/stores/offline'
-import type { RotaSalva, RouteRequest, RouteResult, SalvarRotaInput } from '@/types/api'
+import type { AlteracaoRota, MonitorResultado, RotaSalva, RouteRequest, RouteResult, SalvarRotaInput } from '@/types/api'
 
 function mensagemErro(erro: unknown, padrao: string): string {
   return erro instanceof ApiProblem ? erro.message : padrao
@@ -120,6 +120,29 @@ export const useRotaStore = defineStore('rota', () => {
     }
   }
 
+  async function monitorar(id: number, valor: boolean): Promise<MonitorResultado | null> {
+    try {
+      const resultado = await api.monitorarRota(id, valor)
+      const item = historico.value.find((rota) => rota.id === id)
+      if (item) {
+        item.monitorar = valor
+      }
+      return resultado
+    } catch (e) {
+      erroHistorico.value = mensagemErro(e, 'Falha ao atualizar o monitoramento.')
+      return null
+    }
+  }
+
+  async function alteracoes(id: number): Promise<AlteracaoRota[]> {
+    try {
+      return (await api.listarAlteracoes(id)).items
+    } catch (e) {
+      erroHistorico.value = mensagemErro(e, 'Falha ao carregar as alterações da rota.')
+      return []
+    }
+  }
+
   function inverter(): void {
     parametros.value = {
       ...parametros.value,
@@ -154,6 +177,8 @@ export const useRotaStore = defineStore('rota', () => {
     salvar,
     carregarHistorico,
     remover,
+    monitorar,
+    alteracoes,
     inverter,
     limpar,
   }
