@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.db
+*.csv
+*.log
+*.err
+*.bak*
+data/
+planilhas/

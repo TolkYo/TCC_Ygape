@@ -1,0 +1,73 @@
+version: "3.8"
+
+# Stack da aplicação Ygapé: banco (PostGIS) + API (FastAPI).
+# Copie para `ygape.yml`, preencha os segredos e faça o deploy:
+#   cp ygape.yml.example ygape.yml
+#   docker stack deploy -c ygape.yml ygape
+#
+# `ygape.yml` (com segredos) NÃO é versionado — veja .gitignore.
+
+networks:
+  ygape_net:
+    driver: overlay
+    attachable: true
+
+volumes:
+  ygape_pgdata:
+    external: true
+
+services:
+  ygape_db:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_DB: "ygape"
+      POSTGRES_USER: "ygape"
+      POSTGRES_PASSWORD: "__PG_PASSWORD__"
+    volumes:
+      - ygape_pgdata:/var/lib/postgresql/data
+    networks:
+      - ygape_net
+    # Porta exposta só para o coletor/ETL que rodam no host (protegida por ufw).
+    ports:
+      - target: 5432
+        published: 5432
+        protocol: tcp
+        mode: host
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: any
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ygape -d ygape"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  ygape_api:
+    image: ygape-api:latest
+    environment:
+      HIDROWIZE_PG_HOST: "ygape_db"
+      HIDROWIZE_PG_PORT: "5432"
+      HIDROWIZE_PG_DB: "ygape"
+      HIDROWIZE_PG_USER: "ygape"
+      HIDROWIZE_PG_PASSWORD: "__PG_PASSWORD__"
+      HIDROWIZE_TOKEN_SECRET: "__TOKEN_SECRET__"
+      HIDROWIZE_CORS_ORIGINS: "__CORS_ORIGINS__"
+    networks:
+      - ygape_net
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: any
+    # Para expor publicamente (quando houver domínio), adicione labels:
+    #   - traefik.enable=true
+    #   - traefik.http.routers.ygape.rule=Host(`ygape.exemplo.com.br`)
+    #   - traefik.http.routers.ygape.entrypoints=websecure
+    #   - traefik.http.routers.ygape.tls.certresolver=le
+    #   - traefik.http.services.ygape.loadbalancer.server.port=8000

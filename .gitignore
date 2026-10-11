@@ -55,3 +55,6 @@ build/
 *.bak.*
 *.orig
 *.rej
+
+# Deploy: stack com segredos preenchidos (use ygape.yml.example)
+deploy/swarm/ygape.yml

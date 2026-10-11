@@ -1,0 +1,16 @@
+# Configuração dinâmica (File provider) da Traefik.
+# Rotas que não vêm de labels de serviços Swarm.
+http:
+  routers:
+    formatabnt:
+      rule: "Host(`formatabnt.com.br`) || Host(`www.formatabnt.com.br`)"
+      entryPoints:
+        - websecure
+      service: formatabnt
+      tls:
+        certResolver: le
+  services:
+    formatabnt:
+      loadBalancer:
+        servers:
+          - url: "http://formatador_web:80"
