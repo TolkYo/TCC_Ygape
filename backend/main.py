@@ -9,19 +9,22 @@ rotas, logs) vivem no mesmo banco, alimentado pelo ETL ``carregar_postgis.py``.
 """
 from __future__ import annotations
 
+import asyncio
 import base64
 import hashlib
 import hmac
 import json
 import os
 import secrets
+import threading
 import time
+from datetime import datetime
 from decimal import Decimal
 from typing import Literal
 
 import psycopg2
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, Request, status
+from fastapi import Depends, FastAPI, Request, WebSocket, WebSocketDisconnect, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -35,8 +38,50 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 load_dotenv(os.path.join(ROOT, ".env"))
 TOKEN_TTL_SECONDS = int(os.getenv("HIDROWIZE_TOKEN_TTL_SECONDS", "28800"))
 TOKEN_SECRET = os.getenv("HIDROWIZE_TOKEN_SECRET", "")
+MONITOR_INTERVALO_MIN = int(os.getenv("HIDROWIZE_MONITOR_INTERVALO_MIN", "15"))
 bearer = HTTPBearer(auto_error=False)
 river_graph = RiverGraph(pg_config())
+
+
+class EventBus:
+    """Canal de eventos em memoria por usuario (para o WebSocket)."""
+
+    def __init__(self) -> None:
+        self._subs: dict[int, set[asyncio.Queue]] = {}
+        self._lock = threading.Lock()
+        self._loop: asyncio.AbstractEventLoop | None = None
+
+    def set_loop(self, loop: asyncio.AbstractEventLoop) -> None:
+        self._loop = loop
+
+    def subscribe(self, user_id: int) -> asyncio.Queue:
+        fila: asyncio.Queue = asyncio.Queue(maxsize=100)
+        with self._lock:
+            self._subs.setdefault(user_id, set()).add(fila)
+        return fila
+
+    def unsubscribe(self, user_id: int, fila: asyncio.Queue) -> None:
+        with self._lock:
+            subs = self._subs.get(user_id)
+            if subs:
+                subs.discard(fila)
+                if not subs:
+                    self._subs.pop(user_id, None)
+
+    def publish(self, user_id: int, evento: dict) -> None:
+        with self._lock:
+            filas = list(self._subs.get(user_id, ()))
+        for fila in filas:
+            try:
+                if self._loop is not None:
+                    self._loop.call_soon_threadsafe(fila.put_nowait, evento)
+                else:
+                    fila.put_nowait(evento)
+            except (asyncio.QueueFull, RuntimeError):
+                pass
+
+
+bus = EventBus()
 
 ROTA_COLS = (
     "id, usuario_id, origem_nome, destino_nome, calado_m, margem_seguranca_m, "
@@ -177,17 +222,22 @@ class RouteSaveInput(BaseModel):
     monitorar: bool = False
 
 
+class MonitorInput(BaseModel):
+    monitorar: bool = True
+
+
 app = FastAPI(title="HidroWize API", version="0.1.0", openapi_url="/api/v1/openapi.json", docs_url="/api/v1/docs")
 origins = [item.strip() for item in os.getenv("HIDROWIZE_CORS_ORIGINS", "http://localhost:8000,http://localhost:8080,http://127.0.0.1:8080").split(",")]
 app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
 
 @app.on_event("startup")
-def iniciar_schema() -> None:
+async def iniciar() -> None:
     try:
         ensure_schema()
     except psycopg2.Error as error:
         print(f"[startup] falha ao garantir o schema: {error}")
+    asyncio.create_task(monitor_loop())
 
 
 @app.exception_handler(ApiProblem)
@@ -375,6 +425,154 @@ def station_code(identifier: str) -> str:
     return str(row["codigo_estacao"])
 
 
+def nivel_atual_cm(codigo: str | None) -> float | None:
+    """Ultima cota registrada (cm) para uma estacao, ou None."""
+    if not codigo:
+        return None
+    with connection() as con:
+        with con.cursor() as cur:
+            cur.execute(
+                "SELECT cota_adotada FROM telemetria WHERE codigo_estacao=%s "
+                "ORDER BY data_hora_medicao DESC, id DESC LIMIT 1",
+                (codigo,),
+            )
+            row = cur.fetchone()
+    return float(row["cota_adotada"]) if row and row["cota_adotada"] is not None else None
+
+
+def _alteracao_publica(row) -> dict:
+    item = dict(row)
+    for chave, valor in list(item.items()):
+        if isinstance(valor, Decimal):
+            item[chave] = float(valor)
+    geo = item.get("rota_geojson")
+    if isinstance(geo, str):
+        geo = json.loads(geo)
+    item["rota_geojson"] = geo
+    return item
+
+
+def _atualizar_rota(rota_id: int, campos: dict) -> None:
+    if not campos:
+        return
+    colunas = list(campos)
+    with connection() as con:
+        with con.cursor() as cur:
+            cur.execute(
+                "UPDATE rotas SET " + ", ".join(f"{c}=%s" for c in colunas) + " WHERE id=%s",
+                (*[campos[c] for c in colunas], rota_id),
+            )
+
+
+def _montar_geojson(edges) -> dict:
+    geometrias = river_graph.geometries([e.fid for e in edges])
+    features = []
+    for edge in edges:
+        linhas = geometrias.get(edge.fid, [])
+        geometry = {"type": "LineString", "coordinates": linhas[0]} if len(linhas) == 1 else {"type": "MultiLineString", "coordinates": linhas}
+        features.append({
+            "type": "Feature",
+            "properties": {"fid": edge.fid, "distancia_km": round(edge.distance_km, 3), "profundidade_m": edge.depth_m},
+            "geometry": geometry,
+        })
+    return {"type": "FeatureCollection", "features": features}
+
+
+def _verificar_rota(rota: dict) -> dict | None:
+    codigo = rota["estacao_referencia"]
+    if not codigo:
+        return None
+    nivel = nivel_atual_cm(codigo)
+    if nivel is None:
+        return None
+    baseline = float(rota["nivel_baseline_cm"]) if rota["nivel_baseline_cm"] is not None else None
+    if baseline is None:
+        _atualizar_rota(rota["id"], {"nivel_baseline_cm": nivel})
+        return None
+    variacao = abs(nivel - baseline)
+    if variacao < float(rota["limiar_cm"]):
+        return None
+    extremo = variacao >= 100
+    ultima = rota["ultima_recomputacao"]
+    if ultima is not None and not extremo:
+        if (datetime.now() - ultima).total_seconds() < int(rota["cooldown_min"]) * 60:
+            return None
+
+    origem = station_code(rota["origem_nome"])
+    destino = station_code(rota["destino_nome"])
+    edges = river_graph.route(origem, destino, float(rota["calado_m"]), float(rota["margem_seguranca_m"]))
+    fids = [e.fid for e in edges]
+    if fids == (rota["fids_rota"] or []):
+        _atualizar_rota(rota["id"], {"nivel_baseline_cm": nivel, "fids_rota": Json(fids)})
+        return None
+
+    distancia = sum(e.distance_km for e in edges)
+    depths = [e.depth_m for e in edges if e.depth_m is not None]
+    custo = round(distancia / float(rota["velocidade_embarcacao_kmh"]), 3)
+    geojson = _montar_geojson(edges)
+    motivo = "evento_extremo" if extremo else "variacao_nivel"
+    profundidade_min = min(depths) if depths else None
+    requerido = float(rota["calado_m"]) + float(rota["margem_seguranca_m"])
+
+    with connection() as con:
+        with con.cursor() as cur:
+            cur.execute(
+                "INSERT INTO rota_alteracao (rota_id,motivo,variacao_nivel_cm,estacao_origem,distancia_total_km,custo_total,rota_geojson) "
+                "VALUES (%s,%s,%s,%s,%s,%s,%s)",
+                (rota["id"], motivo, round(variacao, 1), codigo, round(distancia, 3), custo, Json(geojson)),
+            )
+    _atualizar_rota(rota["id"], {
+        "nivel_baseline_cm": nivel,
+        "fids_rota": Json(fids),
+        "ultima_recomputacao": datetime.now(),
+        "distancia_total_km": round(distancia, 3),
+        "tempo_total_h": custo,
+        "custo_total": custo,
+        "profundidade_minima_m": profundidade_min,
+        "trechos_criticos": sum(1 for e in edges if e.depth_m is not None and e.depth_m < requerido),
+        "rota_geojson": Json(geojson),
+    })
+    return {
+        "evento": "rota_alterada",
+        "rota_id": rota["id"],
+        "motivo": motivo,
+        "variacao_nivel_cm": round(variacao, 1),
+        "nova_distancia_km": round(distancia, 3),
+    }
+
+
+def verificar_rotas_monitoradas() -> list[tuple[int, dict]]:
+    eventos: list[tuple[int, dict]] = []
+    with connection() as con:
+        with con.cursor() as cur:
+            cur.execute(
+                "SELECT id,usuario_id,origem_nome,destino_nome,calado_m,margem_seguranca_m,velocidade_embarcacao_kmh,"
+                "estacao_referencia,nivel_baseline_cm,limiar_cm,cooldown_min,ultima_recomputacao,fids_rota "
+                "FROM rotas WHERE monitorar=TRUE"
+            )
+            rotas = [dict(r) for r in cur.fetchall()]
+    for rota in rotas:
+        try:
+            evento = _verificar_rota(rota)
+            if evento:
+                eventos.append((rota["usuario_id"], evento))
+        except Exception as exc:  # uma rota com erro nao derruba as demais
+            print(f"[monitor] rota {rota['id']}: {exc}")
+    return eventos
+
+
+async def monitor_loop() -> None:
+    bus.set_loop(asyncio.get_running_loop())
+    while True:
+        try:
+            eventos = await asyncio.to_thread(verificar_rotas_monitoradas)
+            for usuario_id, evento in eventos:
+                bus.publish(usuario_id, evento)
+        except Exception as exc:
+            print(f"[monitor] erro no ciclo: {exc}")
+        await asyncio.sleep(MONITOR_INTERVALO_MIN * 60)
+
+
 @app.post("/api/v1/rotas/calcular")
 def calculate_route(input: RouteInput):
     origin_code = station_code(input.origem_nome)
@@ -473,6 +671,58 @@ def delete_route(rota_id: int, user: dict = Depends(current_user)):
     return ok({"id": rota_id, "removida": True})
 
 
+@app.post("/api/v1/rotas/{rota_id}/monitorar")
+def monitor_route(rota_id: int, input: MonitorInput, user: dict = Depends(current_user)):
+    codigo = None
+    baseline = None
+    with connection() as con:
+        with con.cursor() as cur:
+            cur.execute(
+                "SELECT id,destino_nome,limiar_cm,cooldown_min FROM rotas WHERE id=%s AND usuario_id=%s",
+                (rota_id, user["id"]),
+            )
+            row = cur.fetchone()
+            if not row:
+                raise ApiProblem(404, "route_not_found", "Rota não encontrada.")
+            if input.monitorar:
+                try:
+                    codigo = station_code(row["destino_nome"])
+                    baseline = nivel_atual_cm(codigo)
+                except ApiProblem:
+                    codigo = None
+                cur.execute(
+                    "UPDATE rotas SET monitorar=TRUE, estacao_referencia=%s, nivel_baseline_cm=%s, ultima_verificacao=now() WHERE id=%s",
+                    (codigo, baseline, rota_id),
+                )
+            else:
+                cur.execute("UPDATE rotas SET monitorar=FALSE WHERE id=%s", (rota_id,))
+    return ok({
+        "rota_id": rota_id,
+        "monitorar": input.monitorar,
+        "estacao_referencia": codigo,
+        "nivel_baseline_cm": baseline,
+        "limiar_variacao_cm": float(row["limiar_cm"]),
+        "cooldown_min": row["cooldown_min"],
+    })
+
+
+@app.get("/api/v1/rotas/{rota_id}/alteracoes")
+def route_changes(rota_id: int, user: dict = Depends(current_user)):
+    with connection() as con:
+        with con.cursor() as cur:
+            cur.execute("SELECT id FROM rotas WHERE id=%s AND usuario_id=%s", (rota_id, user["id"]))
+            if not cur.fetchone():
+                raise ApiProblem(404, "route_not_found", "Rota não encontrada.")
+            cur.execute(
+                "SELECT id,data_alteracao::text AS data_alteracao,motivo,variacao_nivel_cm,"
+                "estacao_origem,distancia_total_km,custo_total,rota_geojson "
+                "FROM rota_alteracao WHERE rota_id=%s ORDER BY id DESC",
+                (rota_id,),
+            )
+            rows = cur.fetchall()
+    return ok({"items": [_alteracao_publica(r) for r in rows]})
+
+
 @app.get("/api/v1/logs")
 def list_logs(limite: int = 100, _: dict = Depends(admin_user)):
     limite = max(1, min(limite, 500))
@@ -482,3 +732,34 @@ def list_logs(limite: int = 100, _: dict = Depends(admin_user)):
             rows = cur.fetchall()
     items = [dict(row) for row in rows]
     return ok({"items": items, "total": len(items)})
+
+
+@app.websocket("/api/v1/ws")
+async def websocket_eventos(websocket: WebSocket, token: str | None = None):
+    if not token:
+        await websocket.close(code=4401)
+        return
+    try:
+        dados = read_token(token)
+    except ApiProblem:
+        await websocket.close(code=4401)
+        return
+    await websocket.accept()
+    fila = bus.subscribe(dados["id"])
+    try:
+        while True:
+            evento = await fila.get()
+            await websocket.send_json(evento)
+    except WebSocketDisconnect:
+        pass
+    finally:
+        bus.unsubscribe(dados["id"], fila)
+
+
+@app.post("/api/v1/monitor/executar")
+def monitor_executar(_: dict = Depends(admin_user)):
+    """Executa um ciclo de verificacao manualmente (admin)."""
+    eventos = verificar_rotas_monitoradas()
+    for usuario_id, evento in eventos:
+        bus.publish(usuario_id, evento)
+    return ok({"eventos": len(eventos), "itens": [ev for _, ev in eventos]})

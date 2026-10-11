@@ -62,6 +62,26 @@ CREATE TABLE IF NOT EXISTS log_eventos (
   id SERIAL PRIMARY KEY, usuario_id INTEGER, tipo TEXT NOT NULL, detalhe TEXT,
   data_hora TIMESTAMP NOT NULL DEFAULT now()
 );
+-- Fase 5b: monitoramento de rota
+ALTER TABLE rotas ADD COLUMN IF NOT EXISTS limiar_cm NUMERIC NOT NULL DEFAULT 30;
+ALTER TABLE rotas ADD COLUMN IF NOT EXISTS cooldown_min INTEGER NOT NULL DEFAULT 30;
+ALTER TABLE rotas ADD COLUMN IF NOT EXISTS estacao_referencia TEXT;
+ALTER TABLE rotas ADD COLUMN IF NOT EXISTS nivel_baseline_cm NUMERIC;
+ALTER TABLE rotas ADD COLUMN IF NOT EXISTS ultima_verificacao TIMESTAMP;
+ALTER TABLE rotas ADD COLUMN IF NOT EXISTS ultima_recomputacao TIMESTAMP;
+ALTER TABLE rotas ADD COLUMN IF NOT EXISTS fids_rota JSONB;
+CREATE TABLE IF NOT EXISTS rota_alteracao (
+  id SERIAL PRIMARY KEY,
+  rota_id INTEGER NOT NULL REFERENCES rotas(id) ON DELETE CASCADE,
+  data_alteracao TIMESTAMP NOT NULL DEFAULT now(),
+  motivo TEXT NOT NULL,
+  variacao_nivel_cm NUMERIC,
+  estacao_origem TEXT,
+  distancia_total_km NUMERIC,
+  custo_total NUMERIC,
+  rota_geojson JSONB
+);
+CREATE INDEX IF NOT EXISTS idx_rota_alteracao ON rota_alteracao(rota_id);
 """
 
 
