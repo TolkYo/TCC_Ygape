@@ -252,6 +252,10 @@ docker stack deploy -c ygape-app.yml ygape-app   # site
 docker stack deploy -c ygape.yml ygape           # DB + API
 ```
 
+## 📄 Licença
+
+Distribuído sob a licença MIT. Veja [LICENSE](LICENSE).
+
 ## 👤 Autores
 
 - [TolkYo](https://github.com/TolkYo)
