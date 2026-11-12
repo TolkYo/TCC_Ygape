@@ -252,6 +252,8 @@ docker stack deploy -c ygape-app.yml ygape-app   # site
 docker stack deploy -c ygape.yml ygape           # DB + API
 ```
 
-## 👤 Autor
+## 👤 Autores
 
-[TolkYo](https://github.com/TolkYo)
+- [TolkYo](https://github.com/TolkYo)
+- [dnnyzap](https://github.com/dnnyzap)
+- [manthuso](https://github.com/manthuso)
