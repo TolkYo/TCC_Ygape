@@ -23,6 +23,7 @@ RAIZ = Path(__file__).resolve().parent.parent
 CSV_ESTACOES = RAIZ / "estacoes_am.csv"
 
 
+# @id FUN-PY-COL-031 | @categoria COL | @catalogo FUNCOES.md
 def main() -> None:
     parser = argparse.ArgumentParser(description="Coleta cota historica das estacoes AM")
     parser.add_argument("--anos", type=int, default=5, help="Janela historica em anos (default 5)")

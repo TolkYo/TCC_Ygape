@@ -1,18 +1,18 @@
 {
-  "name": "Ygapé — Roteamento Fluvial",
+  "name": "Ygapé — Sistema Inteligente de Roteamento Fluvial",
   "short_name": "Ygapé",
   "description": "Planejamento de rotas fluviais na bacia amazônica com dados hidrológicos.",
   "lang": "pt-BR",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#0e1420",
-  "theme_color": "#0b6bcb",
+  "background_color": "#fffcf5",
+  "theme_color": "#19535f",
   "icons": [
     {
-      "src": "/icons.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "/brand/icone.png",
+      "sizes": "1080x1080",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]

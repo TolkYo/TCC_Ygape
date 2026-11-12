@@ -52,6 +52,7 @@ COL_GEOM = "geom_wkb"
 SRID = 4326
 
 
+# @id FUN-PY-ETL-001 | @categoria ETL | @catalogo FUNCOES.md
 def pg_type(tipo: str) -> str:
     u = (tipo or "").upper()
     if "INT" in u:
@@ -65,10 +66,12 @@ def pg_type(tipo: str) -> str:
     return "text"
 
 
+# @id FUN-PY-ETL-002 | @categoria ETL | @catalogo FUNCOES.md
 def _quote(names: list[str]) -> str:
     return ", ".join('"' + n + '"' for n in names)
 
 
+# @id FUN-PY-ETL-003 | @categoria ETL | @catalogo FUNCOES.md
 def conectar():
     return psycopg2.connect(
         host=os.getenv("HIDROWIZE_PG_HOST", "127.0.0.1"),
@@ -79,6 +82,7 @@ def conectar():
     )
 
 
+# @id FUN-PY-ETL-004 | @categoria ETL | @catalogo FUNCOES.md
 def carregar_tabela(sqlite_con, pg_cur, tabela: str, limite: int | None = None) -> int:
     info = sqlite_con.execute(f'PRAGMA table_info("{tabela}")').fetchall()
     if not info:
@@ -143,6 +147,7 @@ def carregar_tabela(sqlite_con, pg_cur, tabela: str, limite: int | None = None) 
     return total
 
 
+# @id FUN-PY-ETL-005 | @categoria ETL | @catalogo FUNCOES.md
 def main() -> int:
     parser = argparse.ArgumentParser(description="Espelha o hidrowize.db no PostGIS (ygape-db)")
     parser.add_argument("--tabelas", help="Lista separada por virgula (default: principais)")

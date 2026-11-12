@@ -40,10 +40,12 @@ TAG_TIEPOINT = 33922      # ModelTiepointTag    -> (i, j, k, x, y, z)
 TAG_TRANSFORM = 34264     # ModelTransformationTag -> 16 doubles
 
 
+# @id FUN-PY-GEO-001 | @categoria GEO | @catalogo FUNCOES.md
 def _float(v) -> float:
     return float(v)
 
 
+# @id FUN-PY-GEO-002 | @categoria GEO | @catalogo FUNCOES.md
 def ler_georef(im: Image.Image) -> tuple[float, float, float, float]:
     """Retorna (scale_x, scale_y, lon_origem, lat_origem) a partir das tags GeoTIFF.
 
@@ -76,6 +78,7 @@ def ler_georef(im: Image.Image) -> tuple[float, float, float, float]:
     return sx, sy, lon0, lat0
 
 
+# @id FUN-PY-GEO-003 | @categoria GEO | @catalogo FUNCOES.md
 def pixel_para_lonlat(col: int, row: int, georef) -> tuple[float, float]:
     sx, sy, lon0, lat0 = georef
     return lon0 + col * sx, lat0 + row * sy
@@ -98,6 +101,7 @@ LEGENDA_PADRAO = [
 ]
 
 
+# @id FUN-PY-GEO-004 | @categoria GEO | @catalogo FUNCOES.md
 def carregar_legenda(caminho: str | None) -> list[dict]:
     if caminho:
         with open(caminho, encoding="utf-8") as f:
@@ -105,6 +109,7 @@ def carregar_legenda(caminho: str | None) -> list[dict]:
     return LEGENDA_PADRAO
 
 
+# @id FUN-PY-GEO-005 | @categoria GEO | @catalogo FUNCOES.md
 def cor_proxima(rgb, legenda: list[dict], tolerancia: float) -> dict | None:
     """Retorna a entrada da legenda cuja cor está mais próxima do pixel (dentro da tolerância)."""
     melhor, melhor_d = None, float("inf")
@@ -122,6 +127,7 @@ def cor_proxima(rgb, legenda: list[dict], tolerancia: float) -> dict | None:
 # Extração
 # --------------------------------------------------------------------------- #
 
+# @id FUN-PY-GEO-006 | @categoria GEO | @catalogo FUNCOES.md
 def amostrar_pontos(img_np: np.ndarray, legenda, tolerancia, passo, georef):
     h, w = img_np.shape[:2]
     pontos = []
@@ -144,6 +150,7 @@ def amostrar_pontos(img_np: np.ndarray, legenda, tolerancia, passo, georef):
     return pontos
 
 
+# @id FUN-PY-GEO-007 | @categoria GEO | @catalogo FUNCOES.md
 def gerar_areas(img_np: np.ndarray, legenda, tolerancia, georef, max_dim=2000):
     """Classifica a imagem inteira e extrai polígonos das faixas de profundidade."""
     import cv2
@@ -193,6 +200,7 @@ def gerar_areas(img_np: np.ndarray, legenda, tolerancia, georef, max_dim=2000):
 # Saída
 # --------------------------------------------------------------------------- #
 
+# @id FUN-PY-GEO-008 | @categoria GEO | @catalogo FUNCOES.md
 def salvar_geojson(pontos: list[dict], areas: list[dict], saida: str) -> None:
     feats = []
     for p in pontos:
@@ -221,6 +229,7 @@ def salvar_geojson(pontos: list[dict], areas: list[dict], saida: str) -> None:
         json.dump({"type": "FeatureCollection", "features": feats}, f, ensure_ascii=False)
 
 
+# @id FUN-PY-GEO-009 | @categoria GEO | @catalogo FUNCOES.md
 def salvar_csv(pontos: list[dict], saida: str) -> None:
     with open(saida, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f, delimiter=";")
@@ -231,6 +240,7 @@ def salvar_csv(pontos: list[dict], saida: str) -> None:
                         p["profundidade_min_m"], p["profundidade_max_m"], p["rotulo"]])
 
 
+# @id FUN-PY-GEO-010 | @categoria GEO | @catalogo FUNCOES.md
 def main() -> None:
     ap = argparse.ArgumentParser(description="Extrai sondagens de carta náutica raster (GeoTIFF)")
     ap.add_argument("carta", help="Caminho do GeoTIFF da carta náutica")

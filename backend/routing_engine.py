@@ -18,6 +18,7 @@ import psycopg2
 from db import pg_config
 
 
+# @id FUN-PY-ROUTE-001 | @categoria ROUTE | @catalogo FUNCOES.md
 def _lines(wkb: bytes) -> list[list[list[float]]]:
     """Le LineString/MultiLineString WKB (OGC, via ST_AsBinary do PostGIS)."""
     def read_at(offset: int):
@@ -52,6 +53,7 @@ class Edge:
 
 
 class RiverGraph:
+    # @id FUN-PY-ROUTE-002 | @categoria ROUTE | @catalogo FUNCOES.md
     def __init__(self, config: dict | None = None):
         self.config = config or pg_config()
         self.edges: dict[int, Edge] = {}
@@ -60,6 +62,7 @@ class RiverGraph:
         self._loaded = False
         self._lock = threading.Lock()
 
+    # @id FUN-PY-ROUTE-003 | @categoria ROUTE | @catalogo FUNCOES.md
     def load(self) -> None:
         if self._loaded:
             return
@@ -88,6 +91,7 @@ class RiverGraph:
                 con.close()
             self._loaded = True
 
+    # @id FUN-PY-ROUTE-004 | @categoria ROUTE | @catalogo FUNCOES.md
     def geometries(self, fids: list[int]) -> dict[int, list[list[list[float]]]]:
         """Geometria (polylinhas) apenas dos trechos informados."""
         if not fids:
@@ -103,10 +107,12 @@ class RiverGraph:
         finally:
             con.close()
 
+    # @id FUN-PY-ROUTE-005 | @categoria ROUTE | @catalogo FUNCOES.md
     def status(self) -> dict:
         self.load()
         return {"nos": len(self.adjacency), "arestas": len(self.edges), "portos_associados": len(self.station_edges)}
 
+    # @id FUN-PY-ROUTE-006 | @categoria ROUTE | @catalogo FUNCOES.md
     def route(self, origin_code: str, destination_code: str, draft_m: float, margin_m: float) -> list[Edge]:
         self.load()
         origin_fid = self.station_edges.get(origin_code)

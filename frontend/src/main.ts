@@ -11,13 +11,13 @@ const app = createApp(App)
 const pinia = createPinia()
 
 app.use(pinia)
-app.use(router)
 
 const session = useSessionStore(pinia)
 
-// Restaura a sessão (token em localStorage) antes de montar, para que os
-// guards de rota já conheçam o usuário autenticado.
+// Restaura a sessão (token em localStorage) antes de instalar o router, para que
+// a navegação inicial já encontre o usuário autenticado nos guards de rota.
 session.restaurar().finally(() => {
+  app.use(router)
   app.mount('#app')
 
   const offline = useOfflineStore(pinia)
@@ -29,7 +29,7 @@ session.restaurar().finally(() => {
 })
 
 // O Service Worker (cache de assets + API) só é registrado no build de produção.
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
+if ('serviceWorker' in navigator && (import.meta.env.PROD || window.isSecureContext)) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch(() => undefined)
   })

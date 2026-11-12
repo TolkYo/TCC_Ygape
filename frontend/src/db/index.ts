@@ -19,6 +19,7 @@ export type SnapshotArmazenado = {
   dados: SnapshotGrafo
 }
 
+// @id FUN-TS-DATA-001 | @categoria DATA | @catalogo FUNCOES.md
 export class YgapeDatabase extends Dexie {
   estacoes!: Table<Estacao, string>
   rotas!: Table<RotaSalva, number>

@@ -58,8 +58,24 @@ onMounted(carregar)
 
     <p v-if="carregando && !eventos.length" class="text-sm text-ink-muted">Carregando eventos…</p>
 
-    <div v-else-if="eventos.length" class="overflow-x-auto rounded-lg border border-edge">
-      <table class="w-full border-collapse text-sm">
+    <template v-else-if="eventos.length">
+      <ul class="space-y-3 md:hidden">
+      <li
+        v-for="evento in eventos"
+        :key="evento.id"
+        class="space-y-2 rounded-lg border border-edge bg-surface-elevated p-4"
+      >
+        <div class="flex flex-wrap items-start justify-between gap-2">
+          <StatusBadge :tom="tom(evento.tipo)" :label="evento.tipo" />
+          <span class="text-xs text-ink-muted">{{ formatarDataHora(evento.data_hora) }}</span>
+        </div>
+        <p class="break-words text-sm">{{ evento.detalhe ?? '—' }}</p>
+        <p class="text-xs text-ink-muted">Usuário: {{ evento.usuario_id ?? '—' }}</p>
+      </li>
+      </ul>
+
+      <div class="hidden overflow-x-auto rounded-lg border border-edge md:block">
+      <table class="w-full min-w-[620px] border-collapse text-sm">
         <thead class="bg-surface-muted text-left">
           <tr>
             <th class="px-3 py-2 font-medium">Data/hora</th>
@@ -81,7 +97,8 @@ onMounted(carregar)
           </tr>
         </tbody>
       </table>
-    </div>
+      </div>
+    </template>
 
     <p
       v-else

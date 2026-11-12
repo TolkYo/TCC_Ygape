@@ -68,6 +68,7 @@ CREATE INDEX IF NOT EXISTS idx_naveg_sem_status ON naveg_trecho_semanal (status)
 """
 
 
+# @id FUN-PY-NAV-006 | @categoria NAV | @catalogo FUNCOES.md
 def carregar_estacoes_virtuais(con: sqlite3.Connection):
     rows = con.execute(
         "SELECT codigo, latitude, longitude FROM estacoes_virtuais "
@@ -79,6 +80,7 @@ def carregar_estacoes_virtuais(con: sqlite3.Connection):
     return codigos, lat, lon, {c: i for i, c in enumerate(codigos)}
 
 
+# @id FUN-PY-NAV-007 | @categoria NAV | @catalogo FUNCOES.md
 def carregar_trechos(con: sqlite3.Connection):
     rows = con.execute(
         "SELECT fid, centroid_lon, centroid_lat FROM trechos_navegaveis "
@@ -90,6 +92,7 @@ def carregar_trechos(con: sqlite3.Connection):
     return fids, lat, lon
 
 
+# @id FUN-PY-NAV-008 | @categoria NAV | @catalogo FUNCOES.md
 def carregar_cota_fundo(con: sqlite3.Connection, fids: np.ndarray):
     mapa: dict[int, tuple[float, str]] = {}
     for fid, obs, est in con.execute(
@@ -109,6 +112,7 @@ def carregar_cota_fundo(con: sqlite3.Connection, fids: np.ndarray):
     return cota, fonte
 
 
+# @id FUN-PY-NAV-009 | @categoria NAV | @catalogo FUNCOES.md
 def k_vizinhos(t_lat, t_lon, s_lat, s_lon, k: int):
     """k estacoes virtuais mais proximas (haversine) por trecho.
 
@@ -138,6 +142,7 @@ def k_vizinhos(t_lat, t_lon, s_lat, s_lon, k: int):
     return idx, dist
 
 
+# @id FUN-PY-NAV-010 | @categoria NAV | @catalogo FUNCOES.md
 def _segunda(data_iso: str) -> date | None:
     try:
         d = datetime.strptime(data_iso[:10], "%Y-%m-%d").date()
@@ -146,6 +151,7 @@ def _segunda(data_iso: str) -> date | None:
     return d - timedelta(days=d.weekday())
 
 
+# @id FUN-PY-NAV-011 | @categoria NAV | @catalogo FUNCOES.md
 def montar_niveis(con: sqlite3.Connection, cod_idx: dict, janela_dias: int):
     """Matriz (semanas x estacoes) com nivel medio (m) na janela de +-N dias.
 
@@ -183,6 +189,7 @@ def montar_niveis(con: sqlite3.Connection, cod_idx: dict, janela_dias: int):
     return semanas, matriz
 
 
+# @id FUN-PY-NAV-012 | @categoria NAV | @catalogo FUNCOES.md
 def classificar(prof: np.ndarray, calado: float, margem: float) -> np.ndarray:
     status = np.full(prof.shape, "SEM_DADOS", dtype=object)
     valid = ~np.isnan(prof)
@@ -195,6 +202,7 @@ def classificar(prof: np.ndarray, calado: float, margem: float) -> np.ndarray:
     return status
 
 
+# @id FUN-PY-NAV-013 | @categoria NAV | @catalogo FUNCOES.md
 def main() -> None:
     ap = argparse.ArgumentParser(description="Navegabilidade semanal por trecho (nível satélite)")
     ap.add_argument("--db", default=DB_PADRAO)

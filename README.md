@@ -1,76 +1,136 @@
-# TCC Ygape
+# MOTO HELP — Sistema de Gestão Web para o Mercado de Serviços para Motociclistas em Manaus
 
-Cópia enxuta e operacional do projeto HidroWize/Ygape.
+Plataforma web interativa desenvolvida para auxiliar motociclistas, com sistema completo de
+autenticação e gerenciamento de anúncios. Utiliza **Supabase** para autenticação e gerenciamento
+de dados em tempo real.
 
-## Conteúdo incluído
+- **Demonstração:** https://moto-help-1.onrender.com
+- **Vídeo de apresentação:** https://www.youtube.com/watch?v=gtCFli9_CrI
+- **Repositório:** https://github.com/GeorgeLucas1/MOTO-HELP
 
-- `backend/`: API FastAPI, motor de roteamento e rotinas de manutenção de dados.
-- `frontend/`: web app Vue 3 + Vite + TypeScript (aplicação principal).
-- `frontend/prototipos/hidrowaze/`: protótipos estáticos anteriores (legado).
-- `data/hidrowize.db`: base hidrográfica consolidada gerada pela coleta; espelhada no PostGIS pelo ETL.
-- `data/hidrowize_api.db`: base SQLite legada de usuários/rotas (a aplicação agora usa o Postgres).
-- `docs/` e arquivos Markdown na raiz: planejamento, requisitos, arquitetura, diagramas e relatórios.
+## Funcionalidades
 
-## Preparar o ambiente e executar a API
+- Cadastro e login de usuários com Supabase Auth
+- Validação de e-mails e tratamento de erros
+- Sistema de autenticação seguro
+- Páginas dinâmicas e interativas
+- Design responsivo com CSS personalizado
+- Integração completa com Supabase (Authentication + Database)
+- Gerenciamento de sessões de usuário
+- Proteção de rotas autenticadas
+- Chat-bot de atendimento
+- Gerenciamento de anúncios
 
-Crie o ambiente virtual e instale as dependências, na raiz do repositório (PowerShell):
+## Tecnologias Utilizadas
 
-```powershell
-python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r backend\requirements.txt
-Copy-Item .env.example .env
+| Tecnologia | Descrição |
+| --- | --- |
+| HTML5 | Estrutura das páginas |
+| CSS3 | Estilização e responsividade |
+| JavaScript (ES6+) | Lógica e interatividade |
+| Supabase | Backend as a Service (Authentication + Database) |
+
+Distribuição das linguagens no repositório: JavaScript 41,6%, CSS 29,0%, HTML 21,3%, EJS 7,5%, Nix 0,6%.
+
+## Capturas de Tela
+
+- Tela Inicial
+- Tela de Login e Tela de Cadastro
+- Portal Principal e Menu de Navegação
+- Chat-bot
+- Gerenciar Anúncios
+
+## Estrutura do Projeto
+
+```text
+MOTO-HELP/
+├── public/
+│   └── assets/              # Recursos estáticos (imagens, ícones)
+├── home/
+│   ├── index.html           # Página inicial
+│   ├── script.js            # Scripts da página inicial
+│   ├── styles.css           # Estilos da página inicial
+│   └── gemini-config.js     # Configurações adicionais
+├── login/
+│   ├── index.html           # Página de login
+│   ├── script.js            # Lógica de autenticação
+│   └── styles.css           # Estilos da tela de login
+├── config/                  # Configurações da aplicação
+├── controllers/             # Controladores
+├── models/                  # Modelos de dados
+├── routes/                  # Gerenciamento de rotas
+├── views/                   # Views adicionais
+├── index.js                 # Entrada do servidor
+├── package.json             # Dependências e scripts
+├── GEMINI.md                # Instruções do workspace
+├── .env                     # Variáveis de ambiente (não versionado)
+└── README.md                # Este arquivo
 ```
 
-Gere um segredo e preencha `HIDROWIZE_TOKEN_SECRET` no `.env`:
+## Pré-requisitos
 
-```powershell
-python -c "import secrets; print(secrets.token_urlsafe(48))"
+- Navegador web moderno
+- Conta no Supabase
+- Editor de código (recomendado: VS Code)
+- Node.js instalado (opcional, para servidor local)
+
+## Configuração
+
+1. Crie o projeto no [Supabase](https://supabase.com) e configure as tabelas necessárias no
+   Supabase Dashboard.
+2. Obtenha a URL do projeto e a chave anônima (anon key) em **Project Settings → API**.
+3. Preencha o arquivo `.env` (não versionado) com as credenciais do Supabase.
+
+## Como Executar o Projeto
+
+### Opção 1: Diretamente no Navegador
+
+```bash
+# Clone o repositório
+git clone https://github.com/GeorgeLucas1/MOTO-HELP
+
+# Navegue até a pasta
+cd moto-help
+
+# Abra o arquivo index.html no navegador
 ```
 
-Crie o primeiro acesso administrativo e suba a API, a partir de `backend`:
+### Opção 2: Com Servidor Local
 
-```powershell
-cd backend
-..\.venv\Scripts\python.exe criar_admin.py --nome "Administrador" --email admin@ygape.local
-..\.venv\Scripts\python.exe -m uvicorn main:app --reload
+```bash
+# Clone o repositório
+git clone https://github.com/GeorgeLucas1/MOTO-HELP
+
+# Navegue até a pasta
+cd moto-help
+
+# Inicie um servidor local (Python)
+python -m http.server 8000
+
+# Ou usando Node.js com live-server
+npx live-server
 ```
 
-A API estará disponível em `http://localhost:8000/api/v1/docs`. O backend carrega o `.env`
-da raiz (segredo JWT, CORS, tempo de vida do token e caminhos dos bancos).
+Acesse **http://localhost:8000** no navegador.
 
-## Executar o frontend
+## Funcionalidades Detalhadas
 
-Com a API no ar, em outro terminal:
+### Autenticação
 
-```powershell
-cd frontend
-npm install
-Copy-Item .env.example .env   # ajuste VITE_API_BASE_URL se necessário
-npm run dev                   # http://localhost:5173
-```
+- Cadastro de novos usuários com validação de e-mail
+- Login seguro com Supabase Auth
+- Logout e gerenciamento de sessão
+- Proteção de rotas autenticadas
 
-Comandos úteis: `npm run build`, `npm run typecheck`, `npm run lint`, `npm run test:run`.
+### Anúncios
 
-## Banco (PostgreSQL + PostGIS)
+- Criação e gerenciamento de anúncios pelos usuários autenticados
+- Integração com o banco de dados Supabase em tempo real
 
-O backend usa **PostgreSQL/PostGIS** (container Docker `ygape-db` na VPS). Os dados hidrográficos
-(estações, trechos, telemetria, satélite) e os dados da aplicação (usuários, rotas, logs) ficam no
-mesmo banco `ygape`, alimentado pelo ETL `backend/carregar_postgis.py` a partir do `data/hidrowize.db`
-(que continua sendo o armazenamento da coleta).
+## Deploy
 
-O banco fica exposto apenas em `127.0.0.1:5432` na VPS (não público). As credenciais estão nas chaves
-`HIDROWIZE_PG_*` do `.env` (não versionado).
+O projeto está publicado no Render em **https://moto-help-1.onrender.com**.
 
-Para rodar a API localmente, abra um túnel SSH para o banco da VPS (o IP está no `.env`):
+## Autor
 
-```powershell
-ssh -L 5432:127.0.0.1:5432 root@<IP_DA_VPS>
-```
-
-> Diferente de versões anteriores, a API **não lê mais SQLite** — `data/hidrowize.db` é usado apenas
-> pelos coletores e pelo ETL. As tabelas grandes de satélite/batimetria só entram no PostGIS com
-> `python backend/carregar_postgis.py --todas`.
-
-## Itens deliberadamente removidos
-
-Ambientes locais, caches, tokens, logs, protótipos alternativos e fontes brutas regeneráveis (GeoPackages e dados satelitais). O banco consolidado já contém os dados necessários para a aplicação funcionar.
+George Lucas — [GitHub](https://github.com/GeorgeLucas1)

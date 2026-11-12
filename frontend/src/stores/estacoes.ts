@@ -12,6 +12,7 @@ export const useEstacoesStore = defineStore('estacoes', () => {
   const carregado = ref(false)
   const doCache = ref(false)
 
+  // @id FUN-TS-DATA-002 | @categoria DATA | @catalogo FUNCOES.md
   async function carregar(forcar = false): Promise<void> {
     if (carregado.value && !forcar) {
       return

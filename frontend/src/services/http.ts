@@ -6,6 +6,7 @@ const baseUrl =
   (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, '') ??
   'http://localhost:8000/api/v1'
 
+// @id FUN-TS-HTTP-008 | @categoria HTTP | @catalogo FUNCOES.md
 export class ApiProblem extends Error {
   readonly code: string
   readonly status: number
@@ -18,10 +19,12 @@ export class ApiProblem extends Error {
   }
 }
 
+// @id FUN-TS-HTTP-006 | @categoria HTTP | @catalogo FUNCOES.md
 export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY)
 }
 
+// @id FUN-TS-HTTP-007 | @categoria HTTP | @catalogo FUNCOES.md
 export function setToken(token: string | null): void {
   if (token) {
     localStorage.setItem(TOKEN_KEY, token)
@@ -36,6 +39,7 @@ type RequestOptions = {
   signal?: AbortSignal
 }
 
+// @id FUN-TS-HTTP-001 | @categoria HTTP | @catalogo FUNCOES.md
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { method = 'GET', body, signal } = options
   const headers: Record<string, string> = { Accept: 'application/json' }

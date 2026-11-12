@@ -115,14 +115,14 @@ async function remover(id: number): Promise<void> {
               {{ formatarNumero(item.tempo_total_h) }} h
             </p>
           </div>
-          <div class="flex items-center gap-2">
-            <BaseButton variante="secundaria" @click="alternarMonitoramento(item)">
+          <div class="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:flex-nowrap">
+            <BaseButton class="flex-1 sm:flex-none" variante="secundaria" @click="alternarMonitoramento(item)">
               {{ item.monitorar ? 'Parar de monitorar' : 'Monitorar' }}
             </BaseButton>
-            <BaseButton variante="secundaria" @click="alternar(item)">
+            <BaseButton class="flex-1 sm:flex-none" variante="secundaria" @click="alternar(item)">
               {{ expandida === item.id ? 'Ocultar' : 'Detalhes' }}
             </BaseButton>
-            <BaseButton variante="perigo" @click="remover(item.id)">Remover</BaseButton>
+            <BaseButton class="flex-1 sm:flex-none" variante="perigo" @click="remover(item.id)">Remover</BaseButton>
           </div>
         </div>
 

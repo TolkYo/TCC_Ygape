@@ -18,6 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 load_dotenv(ROOT / ".env")
 
 
+# @id FUN-PY-DATA-001 | @categoria DATA | @catalogo FUNCOES.md
 def pg_config() -> dict:
     return {
         "host": os.getenv("HIDROWIZE_PG_HOST", "127.0.0.1"),
@@ -29,6 +30,7 @@ def pg_config() -> dict:
 
 
 @contextmanager
+# @id FUN-PY-DATA-002 | @categoria DATA | @catalogo FUNCOES.md
 def connection():
     con = psycopg2.connect(**pg_config(), cursor_factory=psycopg2.extras.RealDictCursor)
     try:
@@ -85,6 +87,7 @@ CREATE INDEX IF NOT EXISTS idx_rota_alteracao ON rota_alteracao(rota_id);
 """
 
 
+# @id FUN-PY-DATA-003 | @categoria DATA | @catalogo FUNCOES.md
 def ensure_schema() -> None:
     with connection() as con:
         with con.cursor() as cur:

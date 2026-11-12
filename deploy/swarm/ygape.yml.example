@@ -65,9 +65,6 @@ services:
           - node.role == manager
       restart_policy:
         condition: any
-    # Para expor publicamente (quando houver domínio), adicione labels:
-    #   - traefik.enable=true
-    #   - traefik.http.routers.ygape.rule=Host(`ygape.exemplo.com.br`)
-    #   - traefik.http.routers.ygape.entrypoints=websecure
-    #   - traefik.http.routers.ygape.tls.certresolver=le
-    #   - traefik.http.services.ygape.loadbalancer.server.port=8000
+
+# O frontend (nginx público) fica em stack separada: veja `ygape-app.yml`.
+# A API permanece interna; o acesso externo é feito pelo nginx em /api/.

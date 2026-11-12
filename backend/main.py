@@ -18,7 +18,7 @@ import os
 import secrets
 import threading
 import time
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Literal
 
@@ -29,7 +29,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from psycopg2.extras import Json
+from psycopg2.extras import Json, execute_values
 from pydantic import BaseModel, Field
 
 from db import connection, ensure_schema, pg_config
@@ -40,6 +40,11 @@ load_dotenv(os.path.join(ROOT, ".env"))
 TOKEN_TTL_SECONDS = int(os.getenv("HIDROWIZE_TOKEN_TTL_SECONDS", "28800"))
 TOKEN_SECRET = os.getenv("HIDROWIZE_TOKEN_SECRET", "")
 MONITOR_INTERVALO_MIN = int(os.getenv("HIDROWIZE_MONITOR_INTERVALO_MIN", "15"))
+COLETA_RANGE_DIAS = 30
+COLETA_MAX_JOBS = 20
+COLETA_LOCK = threading.Lock()
+COLETA_JOBS: dict[str, dict] = {}
+COLETA_ATIVA: str | None = None
 bearer = HTTPBearer(auto_error=False)
 river_graph = RiverGraph(pg_config())
 
@@ -47,20 +52,24 @@ river_graph = RiverGraph(pg_config())
 class EventBus:
     """Canal de eventos em memoria por usuario (para o WebSocket)."""
 
+    # @id FUN-PY-EVENT-001 | @categoria EVENT | @catalogo FUNCOES.md
     def __init__(self) -> None:
         self._subs: dict[int, set[asyncio.Queue]] = {}
         self._lock = threading.Lock()
         self._loop: asyncio.AbstractEventLoop | None = None
 
+    # @id FUN-PY-EVENT-002 | @categoria EVENT | @catalogo FUNCOES.md
     def set_loop(self, loop: asyncio.AbstractEventLoop) -> None:
         self._loop = loop
 
+    # @id FUN-PY-EVENT-003 | @categoria EVENT | @catalogo FUNCOES.md
     def subscribe(self, user_id: int) -> asyncio.Queue:
         fila: asyncio.Queue = asyncio.Queue(maxsize=100)
         with self._lock:
             self._subs.setdefault(user_id, set()).add(fila)
         return fila
 
+    # @id FUN-PY-EVENT-004 | @categoria EVENT | @catalogo FUNCOES.md
     def unsubscribe(self, user_id: int, fila: asyncio.Queue) -> None:
         with self._lock:
             subs = self._subs.get(user_id)
@@ -69,6 +78,7 @@ class EventBus:
                 if not subs:
                     self._subs.pop(user_id, None)
 
+    # @id FUN-PY-EVENT-005 | @categoria EVENT | @catalogo FUNCOES.md
     def publish(self, user_id: int, evento: dict) -> None:
         with self._lock:
             filas = list(self._subs.get(user_id, ()))
@@ -92,20 +102,24 @@ ROTA_COLS = (
 
 
 class ApiProblem(Exception):
+    # @id FUN-PY-API-044 | @categoria API | @catalogo FUNCOES.md
     def __init__(self, status_code: int, code: str, message: str):
         self.status_code, self.code, self.message = status_code, code, message
 
 
+# @id FUN-PY-API-001 | @categoria API | @catalogo FUNCOES.md
 def ok(data: object, status_code: int = 200) -> JSONResponse:
     return JSONResponse(status_code=status_code, content={"success": True, "data": data})
 
 
+# @id FUN-PY-AUTH-001 | @categoria AUTH | @catalogo FUNCOES.md
 def password_hash(password: str, salt: bytes | None = None) -> str:
     salt = salt or secrets.token_bytes(16)
     digest = hashlib.scrypt(password.encode("utf-8"), salt=salt, n=2**14, r=8, p=1)
     return base64.urlsafe_b64encode(salt + digest).decode("ascii")
 
 
+# @id FUN-PY-AUTH-002 | @categoria AUTH | @catalogo FUNCOES.md
 def verify_password(password: str, stored: str) -> bool:
     try:
         raw = base64.urlsafe_b64decode(stored.encode("ascii"))
@@ -114,18 +128,21 @@ def verify_password(password: str, stored: str) -> bool:
         return False
 
 
+# @id FUN-PY-AUTH-003 | @categoria AUTH | @catalogo FUNCOES.md
 def signing_secret() -> bytes:
     if not TOKEN_SECRET:
         raise ApiProblem(503, "auth_not_configured", "Defina HIDROWIZE_TOKEN_SECRET para habilitar autenticação.")
     return TOKEN_SECRET.encode("utf-8")
 
 
+# @id FUN-PY-AUTH-004 | @categoria AUTH | @catalogo FUNCOES.md
 def issue_token(user: dict) -> str:
     payload = f"{user['id']}:{user['papel']}:{int(time.time()) + TOKEN_TTL_SECONDS}".encode("utf-8")
     signature = hmac.new(signing_secret(), payload, hashlib.sha256).digest()
     return base64.urlsafe_b64encode(payload + b"." + signature).decode("ascii")
 
 
+# @id FUN-PY-AUTH-005 | @categoria AUTH | @catalogo FUNCOES.md
 def read_token(token: str) -> dict:
     try:
         raw = base64.urlsafe_b64decode(token.encode("ascii"))
@@ -141,6 +158,7 @@ def read_token(token: str) -> dict:
         raise ApiProblem(401, "invalid_token", "Token ausente, inválido ou expirado.")
 
 
+# @id FUN-PY-AUTH-006 | @categoria AUTH | @catalogo FUNCOES.md
 def current_user(credentials: HTTPAuthorizationCredentials | None = Depends(bearer)) -> dict:
     if not credentials or credentials.scheme.lower() != "bearer":
         raise ApiProblem(401, "missing_token", "Autenticação Bearer obrigatória.")
@@ -154,12 +172,14 @@ def current_user(credentials: HTTPAuthorizationCredentials | None = Depends(bear
     return dict(row)
 
 
+# @id FUN-PY-AUTH-007 | @categoria AUTH | @catalogo FUNCOES.md
 def admin_user(user: dict = Depends(current_user)) -> dict:
     if user["papel"] != "admin":
         raise ApiProblem(403, "forbidden", "Esta operação requer perfil de administrador.")
     return user
 
 
+# @id FUN-PY-API-002 | @categoria API | @catalogo FUNCOES.md
 def registrar_evento(tipo: str, detalhe: str, usuario_id: int | None = None) -> None:
     try:
         with connection() as con:
@@ -167,6 +187,182 @@ def registrar_evento(tipo: str, detalhe: str, usuario_id: int | None = None) -> 
                 cur.execute("INSERT INTO log_eventos (usuario_id,tipo,detalhe) VALUES (%s,%s,%s)", (usuario_id, tipo, detalhe))
     except psycopg2.Error:
         pass
+
+
+# @id FUN-PY-COL-069 | @categoria COL | @catalogo FUNCOES.md
+def _converter_numero(valor: object) -> float | None:
+    if valor is None or valor == "":
+        return None
+    try:
+        return float(valor)
+    except (TypeError, ValueError):
+        return None
+
+
+# @id FUN-PY-COL-065 | @categoria COL | @catalogo FUNCOES.md
+def _resolver_estacoes_coleta(codigos: list[str]) -> list[str]:
+    selecionadas = sorted({codigo.strip() for codigo in codigos if codigo and codigo.strip()})
+    with connection() as con:
+        with con.cursor() as cur:
+            if selecionadas:
+                cur.execute(
+                    "SELECT codigo_estacao FROM estacoes WHERE codigo_estacao = ANY(%s)",
+                    (selecionadas,),
+                )
+                encontradas = {row["codigo_estacao"] for row in cur.fetchall()}
+                faltantes = [codigo for codigo in selecionadas if codigo not in encontradas]
+                if faltantes:
+                    raise ApiProblem(
+                        422,
+                        "invalid_station",
+                        "Estação(ões) não encontrada(s): " + ", ".join(faltantes),
+                    )
+                return selecionadas
+            cur.execute(
+                "SELECT codigo_estacao FROM estacoes "
+                "WHERE COALESCE(telemetrica, 0) = 1 ORDER BY codigo_estacao"
+            )
+            return [row["codigo_estacao"] for row in cur.fetchall()]
+
+
+# @id FUN-PY-COL-066 | @categoria COL | @catalogo FUNCOES.md
+def _inserir_leituras(leituras: list[tuple]) -> int:
+    if not leituras:
+        return 0
+    with connection() as con:
+        with con.cursor() as cur:
+            cur.execute(
+                "CREATE UNIQUE INDEX IF NOT EXISTS ux_telemetria_estacao_data "
+                "ON telemetria (codigo_estacao, data_hora_medicao)"
+            )
+            cur.execute(
+                "CREATE TEMP TABLE tmp_coleta_telemetria ("
+                "codigo_estacao text, data_hora_medicao text, cota_adotada double precision, "
+                "cota_status text, vazao_adotada double precision, vazao_status text, "
+                "chuva_adotada double precision, chuva_status text, data_atualizacao text"
+                ") ON COMMIT DROP"
+            )
+            execute_values(cur, "INSERT INTO tmp_coleta_telemetria VALUES %s", leituras, page_size=2000)
+            cur.execute(
+                "INSERT INTO telemetria (id, codigo_estacao, data_hora_medicao, cota_adotada, "
+                "cota_status, vazao_adotada, vazao_status, chuva_adotada, chuva_status, data_atualizacao) "
+                "SELECT base.proximo + row_number() OVER (ORDER BY t.codigo_estacao, t.data_hora_medicao), "
+                "t.codigo_estacao, t.data_hora_medicao, t.cota_adotada, t.cota_status, "
+                "t.vazao_adotada, t.vazao_status, t.chuva_adotada, t.chuva_status, t.data_atualizacao "
+                "FROM tmp_coleta_telemetria t "
+                "CROSS JOIN (SELECT COALESCE(MAX(id), 0) AS proximo FROM telemetria) base "
+                "ON CONFLICT (codigo_estacao, data_hora_medicao) DO NOTHING"
+            )
+            return cur.rowcount
+
+
+# @id FUN-PY-COL-068 | @categoria COL | @catalogo FUNCOES.md
+def _atualizar_coleta(job_id: str, **campos: object) -> None:
+    with COLETA_LOCK:
+        job = COLETA_JOBS.get(job_id)
+        if job is not None:
+            job.update(campos)
+
+
+# @id FUN-PY-COL-067 | @categoria COL | @catalogo FUNCOES.md
+def _executar_coleta_niveis(
+    job_id: str,
+    codigos: list[str],
+    inicio: str | None,
+    fim: str | None,
+    usuario_id: int,
+) -> None:
+    global COLETA_ATIVA
+    total_leituras = inseridas = processadas = 0
+    janela_inicio: str | None = None
+    janela_fim: str | None = None
+    try:
+        from ana_client import AnaClient
+
+        cliente = AnaClient()
+        data_busca = date.today().isoformat()
+        for indice in range(0, len(codigos), 10):
+            lote = codigos[indice : indice + 10]
+            resposta = cliente._get(
+                "/EstacoesTelemetricas/HidroinfoanaSerieTelemetricaAdotada/v2",
+                params={
+                    "Codigos_Estacoes": ",".join(lote),
+                    "Tipo Filtro Data": "DATA_LEITURA",
+                    "Data de Busca": data_busca,
+                    "Range Intervalo de busca": f"DIAS_{COLETA_RANGE_DIAS}",
+                },
+            )
+            lote_leituras: dict[tuple[str, str], tuple] = {}
+            for item in resposta.get("items") or []:
+                codigo = str(item.get("codigoestacao") or "").strip()
+                data_hora = str(item.get("Data_Hora_Medicao") or "").strip()
+                if not codigo or not data_hora:
+                    continue
+                dia = data_hora[:10]
+                if inicio and dia < inicio:
+                    continue
+                if fim and dia > fim:
+                    continue
+                lote_leituras[(codigo, data_hora)] = (
+                    codigo,
+                    data_hora,
+                    _converter_numero(item.get("Cota_Adotada")),
+                    item.get("Cota_Adotada_Status"),
+                    _converter_numero(item.get("Vazao_Adotada")),
+                    item.get("Vazao_Adotada_Status"),
+                    _converter_numero(item.get("Chuva_Adotada")),
+                    item.get("Chuva_Adotada_Status"),
+                    item.get("Data_Atualizacao"),
+                )
+                if janela_inicio is None or dia < janela_inicio:
+                    janela_inicio = dia
+                if janela_fim is None or dia > janela_fim:
+                    janela_fim = dia
+
+            total_leituras += len(lote_leituras)
+            inseridas += _inserir_leituras(list(lote_leituras.values()))
+            processadas += len(lote)
+            _atualizar_coleta(
+                job_id,
+                estacoes_processadas=processadas,
+                leituras=total_leituras,
+                inseridas=inseridas,
+                ignoradas=total_leituras - inseridas,
+                janela={"inicio": janela_inicio, "fim": janela_fim},
+            )
+
+        mensagem = None
+        if total_leituras == 0:
+            mensagem = (
+                "A API da ANA retorna apenas os últimos 30 dias; nenhuma leitura ficou "
+                "dentro do período solicitado."
+                if (inicio or fim)
+                else "Nenhuma leitura foi retornada pela ANA para as estações selecionadas."
+            )
+        _atualizar_coleta(
+            job_id,
+            status="concluida",
+            mensagem=mensagem,
+            finalizado_em=datetime.utcnow().isoformat(timespec="seconds") + "Z",
+        )
+        registrar_evento(
+            "coleta_niveis",
+            f"Coleta ANA: {inseridas} novas de {total_leituras} leituras "
+            f"({len(codigos)} estações)",
+            usuario_id,
+        )
+    except Exception as erro:  # noqa: BLE001 - falha reportada ao administrador
+        _atualizar_coleta(
+            job_id,
+            status="erro",
+            mensagem=str(erro),
+            finalizado_em=datetime.utcnow().isoformat(timespec="seconds") + "Z",
+        )
+        registrar_evento("coleta_niveis_erro", f"Falha na coleta ANA: {erro}", usuario_id)
+    finally:
+        with COLETA_LOCK:
+            if COLETA_ATIVA == job_id:
+                COLETA_ATIVA = None
 
 
 class LoginInput(BaseModel):
@@ -234,6 +430,7 @@ app.add_middleware(GZipMiddleware, minimum_size=100000)
 
 
 @app.on_event("startup")
+# @id FUN-PY-API-010 | @categoria API | @catalogo FUNCOES.md
 async def iniciar() -> None:
     try:
         ensure_schema()
@@ -243,11 +440,13 @@ async def iniciar() -> None:
 
 
 @app.exception_handler(ApiProblem)
+# @id FUN-PY-API-009 | @categoria API | @catalogo FUNCOES.md
 async def api_problem_handler(_: Request, error: ApiProblem):
     return JSONResponse(status_code=error.status_code, content={"success": False, "error": {"code": error.code, "message": error.message}})
 
 
 @app.get("/health")
+# @id FUN-PY-API-020 | @categoria API | @catalogo FUNCOES.md
 def health():
     try:
         with connection() as con:
@@ -260,6 +459,7 @@ def health():
 
 
 @app.post("/api/v1/auth/login")
+# @id FUN-PY-API-021 | @categoria API | @catalogo FUNCOES.md
 def login(input: LoginInput):
     with connection() as con:
         with con.cursor() as cur:
@@ -273,11 +473,13 @@ def login(input: LoginInput):
 
 
 @app.get("/api/v1/auth/me")
+# @id FUN-PY-API-022 | @categoria API | @catalogo FUNCOES.md
 def me(user: dict = Depends(current_user)):
     return ok({key: user[key] for key in ("id", "nome", "email", "papel")})
 
 
 @app.put("/api/v1/auth/me")
+# @id FUN-PY-API-023 | @categoria API | @catalogo FUNCOES.md
 def update_me(input: ProfileUpdate, user: dict = Depends(current_user)):
     fields = input.model_dump(exclude_none=True)
     if not fields:
@@ -295,6 +497,7 @@ def update_me(input: ProfileUpdate, user: dict = Depends(current_user)):
 
 
 @app.get("/api/v1/usuarios")
+# @id FUN-PY-API-024 | @categoria API | @catalogo FUNCOES.md
 def list_users(_: dict = Depends(admin_user)):
     with connection() as con:
         with con.cursor() as cur:
@@ -304,6 +507,7 @@ def list_users(_: dict = Depends(admin_user)):
 
 
 @app.post("/api/v1/usuarios", status_code=status.HTTP_201_CREATED)
+# @id FUN-PY-API-025 | @categoria API | @catalogo FUNCOES.md
 def create_user(input: UserInput, admin: dict = Depends(admin_user)):
     try:
         with connection() as con:
@@ -320,6 +524,7 @@ def create_user(input: UserInput, admin: dict = Depends(admin_user)):
 
 
 @app.put("/api/v1/usuarios/{user_id}")
+# @id FUN-PY-API-026 | @categoria API | @catalogo FUNCOES.md
 def update_user(user_id: int, input: UserUpdate, _: dict = Depends(admin_user)):
     fields = input.model_dump(exclude_none=True)
     if not fields:
@@ -339,6 +544,7 @@ def update_user(user_id: int, input: UserUpdate, _: dict = Depends(admin_user)):
 
 
 @app.delete("/api/v1/usuarios/{user_id}")
+# @id FUN-PY-API-027 | @categoria API | @catalogo FUNCOES.md
 def disable_user(user_id: int, admin: dict = Depends(admin_user)):
     with connection() as con:
         with con.cursor() as cur:
@@ -351,6 +557,7 @@ def disable_user(user_id: int, admin: dict = Depends(admin_user)):
 
 
 @app.get("/api/v1/estacoes")
+# @id FUN-PY-API-028 | @categoria API | @catalogo FUNCOES.md
 def list_stations(rio: str | None = None, municipio: str | None = None, ativa: bool = True):
     clauses, params = ["1=1"], []
     if rio:
@@ -376,6 +583,7 @@ def list_stations(rio: str | None = None, municipio: str | None = None, ativa: b
 
 
 @app.get("/api/v1/estacoes/{codigo}")
+# @id FUN-PY-API-029 | @categoria API | @catalogo FUNCOES.md
 def station(codigo: str):
     with connection() as con:
         with con.cursor() as cur:
@@ -387,6 +595,7 @@ def station(codigo: str):
 
 
 @app.get("/api/v1/niveis")
+# @id FUN-PY-API-030 | @categoria API | @catalogo FUNCOES.md
 def levels(estacao: str, data_inicio: str, data_fim: str | None = None, _: dict = Depends(current_user)):
     with connection() as con:
         with con.cursor() as cur:
@@ -403,17 +612,84 @@ def levels(estacao: str, data_inicio: str, data_fim: str | None = None, _: dict 
     return ok({"estacao": estacao, "items": [{"data_hora": x["data_hora_medicao"], "nivel_cm": x["cota_adotada"], "chuva_mm": x["chuva_adotada"], "vazao": x["vazao_adotada"]} for x in items]})
 
 
-@app.post("/api/v1/niveis/coletar", status_code=status.HTTP_501_NOT_IMPLEMENTED)
-def collect_levels(_: CollectInput, __: dict = Depends(admin_user)):
-    raise ApiProblem(501, "collector_not_queued", "O coletor ainda deve ser executado pelo serviço agendado; não há fila de tarefas na API.")
+@app.post("/api/v1/niveis/coletar", status_code=status.HTTP_202_ACCEPTED)
+# @id FUN-PY-API-031 | @categoria API | @catalogo FUNCOES.md
+def collect_levels(input: CollectInput, admin: dict = Depends(admin_user)):
+    global COLETA_ATIVA
+    inicio = input.periodo_inicio or None
+    fim = input.periodo_fim or None
+    for rotulo, valor in (("periodo_inicio", inicio), ("periodo_fim", fim)):
+        if valor:
+            try:
+                date.fromisoformat(valor)
+            except ValueError:
+                raise ApiProblem(422, "invalid_period", f"{rotulo} deve usar o formato AAAA-MM-DD.")
+    if inicio and fim and inicio > fim:
+        raise ApiProblem(422, "invalid_period", "periodo_inicio deve ser anterior a periodo_fim.")
 
+    codigos = _resolver_estacoes_coleta(input.estacoes)
+    if not codigos:
+        raise ApiProblem(422, "no_stations", "Nenhuma estação telemétrica disponível para coleta.")
+
+    with COLETA_LOCK:
+        if COLETA_ATIVA:
+            raise ApiProblem(
+                409,
+                "coleta_em_andamento",
+                f"Já existe uma coleta em andamento (job {COLETA_ATIVA}).",
+            )
+        job_id = secrets.token_hex(6)
+        COLETA_JOBS[job_id] = {
+            "job_id": job_id,
+            "status": "em_andamento",
+            "estacoes_total": len(codigos),
+            "estacoes_processadas": 0,
+            "leituras": 0,
+            "inseridas": 0,
+            "ignoradas": 0,
+            "janela": {"inicio": None, "fim": None},
+            "periodo": {"inicio": inicio, "fim": fim},
+            "mensagem": None,
+            "iniciado_em": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+            "finalizado_em": None,
+        }
+        COLETA_ATIVA = job_id
+        if len(COLETA_JOBS) > COLETA_MAX_JOBS:
+            excedentes = sorted(
+                COLETA_JOBS, key=lambda item: COLETA_JOBS[item]["iniciado_em"]
+            )[:-COLETA_MAX_JOBS]
+            for chave in excedentes:
+                if COLETA_JOBS[chave]["status"] != "em_andamento":
+                    COLETA_JOBS.pop(chave, None)
+        job = dict(COLETA_JOBS[job_id])
+
+    threading.Thread(
+        target=_executar_coleta_niveis,
+        args=(job_id, codigos, inicio, fim, admin["id"]),
+        name=f"coleta-{job_id}",
+        daemon=True,
+    ).start()
+    return ok(job, 202)
+
+
+@app.get("/api/v1/niveis/coletar/{job_id}")
+# @id FUN-PY-API-045 | @categoria API | @catalogo FUNCOES.md
+def collect_status(job_id: str, _: dict = Depends(admin_user)):
+    with COLETA_LOCK:
+        job = COLETA_JOBS.get(job_id)
+        job = dict(job) if job is not None else None
+    if job is None:
+        raise ApiProblem(404, "job_not_found", "Coleta não encontrada.")
+    return ok(job)
 
 @app.get("/api/v1/grafo/status")
+# @id FUN-PY-API-032 | @categoria API | @catalogo FUNCOES.md
 def graph_status():
     graph = river_graph.status()
     return ok({**graph, "area_ativa": "hidrovias_navegaveis_bhae", "ultima_reconstrucao": None, "pronto": True})
 
 
+# @id FUN-PY-API-003 | @categoria API | @catalogo FUNCOES.md
 def station_code(identifier: str) -> str:
     with connection() as con:
         with con.cursor() as cur:
@@ -427,6 +703,7 @@ def station_code(identifier: str) -> str:
     return str(row["codigo_estacao"])
 
 
+# @id FUN-PY-API-004 | @categoria API | @catalogo FUNCOES.md
 def nivel_atual_cm(codigo: str | None) -> float | None:
     """Ultima cota registrada (cm) para uma estacao, ou None."""
     if not codigo:
@@ -442,6 +719,7 @@ def nivel_atual_cm(codigo: str | None) -> float | None:
     return float(row["cota_adotada"]) if row and row["cota_adotada"] is not None else None
 
 
+# @id FUN-PY-API-005 | @categoria API | @catalogo FUNCOES.md
 def _alteracao_publica(row) -> dict:
     item = dict(row)
     for chave, valor in list(item.items()):
@@ -454,6 +732,7 @@ def _alteracao_publica(row) -> dict:
     return item
 
 
+# @id FUN-PY-API-006 | @categoria API | @catalogo FUNCOES.md
 def _atualizar_rota(rota_id: int, campos: dict) -> None:
     if not campos:
         return
@@ -466,6 +745,7 @@ def _atualizar_rota(rota_id: int, campos: dict) -> None:
             )
 
 
+# @id FUN-PY-API-007 | @categoria API | @catalogo FUNCOES.md
 def _montar_geojson(edges) -> dict:
     geometrias = river_graph.geometries([e.fid for e in edges])
     features = []
@@ -480,6 +760,7 @@ def _montar_geojson(edges) -> dict:
     return {"type": "FeatureCollection", "features": features}
 
 
+# @id FUN-PY-MON-001 | @categoria MON | @catalogo FUNCOES.md
 def _ultimas_leituras_ana(codigos: set[str]) -> dict[str, float]:
     """Pull dirigido: le da ANA apenas as estacoes informadas (cota atual em cm)."""
     if not codigos:
@@ -526,6 +807,7 @@ def _ultimas_leituras_ana(codigos: set[str]) -> dict[str, float]:
     return {codigo: valor for codigo, (_, valor) in brutas.items()}
 
 
+# @id FUN-PY-MON-002 | @categoria MON | @catalogo FUNCOES.md
 def _verificar_rota(rota: dict, leituras: dict[str, float]) -> dict | None:
     codigo = rota["estacao_referencia"]
     if not codigo:
@@ -591,6 +873,7 @@ def _verificar_rota(rota: dict, leituras: dict[str, float]) -> dict | None:
     }
 
 
+# @id FUN-PY-MON-003 | @categoria MON | @catalogo FUNCOES.md
 def verificar_rotas_monitoradas() -> list[tuple[int, dict]]:
     eventos: list[tuple[int, dict]] = []
     with connection() as con:
@@ -613,6 +896,7 @@ def verificar_rotas_monitoradas() -> list[tuple[int, dict]]:
     return eventos
 
 
+# @id FUN-PY-MON-004 | @categoria MON | @catalogo FUNCOES.md
 async def monitor_loop() -> None:
     bus.set_loop(asyncio.get_running_loop())
     while True:
@@ -626,6 +910,7 @@ async def monitor_loop() -> None:
 
 
 @app.post("/api/v1/rotas/calcular")
+# @id FUN-PY-API-033 | @categoria API | @catalogo FUNCOES.md
 def calculate_route(input: RouteInput):
     origin_code = station_code(input.origem_nome)
     destination_code = station_code(input.destino_nome)
@@ -657,6 +942,7 @@ def calculate_route(input: RouteInput):
     })
 
 
+# @id FUN-PY-API-008 | @categoria API | @catalogo FUNCOES.md
 def _rota_publica(row) -> dict:
     item = dict(row)
     item["monitorar"] = bool(item["monitorar"])
@@ -671,6 +957,7 @@ def _rota_publica(row) -> dict:
 
 
 @app.post("/api/v1/rotas", status_code=status.HTTP_201_CREATED)
+# @id FUN-PY-API-034 | @categoria API | @catalogo FUNCOES.md
 def save_route(input: RouteSaveInput, user: dict = Depends(current_user)):
     with connection() as con:
         with con.cursor() as cur:
@@ -692,6 +979,7 @@ def save_route(input: RouteSaveInput, user: dict = Depends(current_user)):
 
 
 @app.get("/api/v1/rotas")
+# @id FUN-PY-API-035 | @categoria API | @catalogo FUNCOES.md
 def list_routes(user: dict = Depends(current_user)):
     with connection() as con:
         with con.cursor() as cur:
@@ -702,6 +990,7 @@ def list_routes(user: dict = Depends(current_user)):
 
 
 @app.get("/api/v1/rotas/{rota_id}")
+# @id FUN-PY-API-036 | @categoria API | @catalogo FUNCOES.md
 def get_route(rota_id: int, user: dict = Depends(current_user)):
     with connection() as con:
         with con.cursor() as cur:
@@ -713,6 +1002,7 @@ def get_route(rota_id: int, user: dict = Depends(current_user)):
 
 
 @app.delete("/api/v1/rotas/{rota_id}")
+# @id FUN-PY-API-037 | @categoria API | @catalogo FUNCOES.md
 def delete_route(rota_id: int, user: dict = Depends(current_user)):
     with connection() as con:
         with con.cursor() as cur:
@@ -724,6 +1014,7 @@ def delete_route(rota_id: int, user: dict = Depends(current_user)):
 
 
 @app.post("/api/v1/rotas/{rota_id}/monitorar")
+# @id FUN-PY-API-038 | @categoria API | @catalogo FUNCOES.md
 def monitor_route(rota_id: int, input: MonitorInput, user: dict = Depends(current_user)):
     codigo = None
     baseline = None
@@ -759,6 +1050,7 @@ def monitor_route(rota_id: int, input: MonitorInput, user: dict = Depends(curren
 
 
 @app.get("/api/v1/rotas/{rota_id}/alteracoes")
+# @id FUN-PY-API-039 | @categoria API | @catalogo FUNCOES.md
 def route_changes(rota_id: int, user: dict = Depends(current_user)):
     with connection() as con:
         with con.cursor() as cur:
@@ -776,6 +1068,7 @@ def route_changes(rota_id: int, user: dict = Depends(current_user)):
 
 
 @app.get("/api/v1/logs")
+# @id FUN-PY-API-040 | @categoria API | @catalogo FUNCOES.md
 def list_logs(limite: int = 100, _: dict = Depends(admin_user)):
     limite = max(1, min(limite, 500))
     with connection() as con:
@@ -787,6 +1080,7 @@ def list_logs(limite: int = 100, _: dict = Depends(admin_user)):
 
 
 @app.websocket("/api/v1/ws")
+# @id FUN-PY-API-041 | @categoria API | @catalogo FUNCOES.md
 async def websocket_eventos(websocket: WebSocket, token: str | None = None):
     if not token:
         await websocket.close(code=4401)
@@ -809,6 +1103,7 @@ async def websocket_eventos(websocket: WebSocket, token: str | None = None):
 
 
 @app.post("/api/v1/monitor/executar")
+# @id FUN-PY-API-042 | @categoria API | @catalogo FUNCOES.md
 def monitor_executar(_: dict = Depends(admin_user)):
     """Executa um ciclo de verificacao manualmente (admin)."""
     eventos = verificar_rotas_monitoradas()
@@ -818,6 +1113,7 @@ def monitor_executar(_: dict = Depends(admin_user)):
 
 
 @app.get("/api/v1/sync/snapshot")
+# @id FUN-PY-API-043 | @categoria API | @catalogo FUNCOES.md
 def sync_snapshot(bbox: str | None = None, _: dict = Depends(current_user)):
     """Snapshot compacto do grafo para o calculo offline (RF022).
 

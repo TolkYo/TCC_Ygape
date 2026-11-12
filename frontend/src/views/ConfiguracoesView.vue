@@ -56,7 +56,7 @@ async function salvarPerfil(): Promise<void> {
     </header>
 
     <section class="max-w-lg space-y-4 rounded-lg border border-edge bg-surface-elevated p-4">
-      <div class="flex items-center justify-between gap-4">
+      <div class="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
         <div>
           <p class="text-sm font-medium">Tema</p>
           <p class="text-xs text-ink-muted">Claro ou escuro. Atual: {{ ui.tema }}.</p>
@@ -64,7 +64,7 @@ async function salvarPerfil(): Promise<void> {
         <BaseButton variante="secundaria" @click="ui.alternarTema()">Alternar</BaseButton>
       </div>
 
-      <div class="flex items-center justify-between gap-4">
+      <div class="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
         <div>
           <p class="text-sm font-medium">Alto contraste</p>
           <p class="text-xs text-ink-muted">
@@ -75,7 +75,7 @@ async function salvarPerfil(): Promise<void> {
         <BaseButton variante="secundaria" @click="ui.alternarContraste()">Alternar</BaseButton>
       </div>
 
-      <div class="flex items-center justify-between gap-4">
+      <div class="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
         <div>
           <p class="text-sm font-medium">Tamanho do texto</p>
           <p class="text-xs text-ink-muted">Escala atual: nível {{ ui.escalaFonte + 1 }} de 3.</p>

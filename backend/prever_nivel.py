@@ -24,6 +24,7 @@ RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB = os.path.join(RAIZ, "data", "hidrowize.db")
 
 
+# @id FUN-PY-ML-019 | @categoria ML | @catalogo FUNCOES.md
 def carregar_serie(con: sqlite3.Connection, codigo: str) -> tuple[np.ndarray, np.ndarray]:
     cur = con.execute(
         "SELECT data, nivel_m FROM series_nivel_satelite "
@@ -37,6 +38,7 @@ def carregar_serie(con: sqlite3.Connection, codigo: str) -> tuple[np.ndarray, np
     return np.array(datas), np.array(níveis, dtype=float)
 
 
+# @id FUN-PY-ML-020 | @categoria ML | @catalogo FUNCOES.md
 def _estacao_padrao(con: sqlite3.Connection) -> str:
     cur = con.execute(
         "SELECT codigo FROM series_nivel_satelite "
@@ -45,6 +47,7 @@ def _estacao_padrao(con: sqlite3.Connection) -> str:
     return cur.fetchone()[0]
 
 
+# @id FUN-PY-ML-021 | @categoria ML | @catalogo FUNCOES.md
 def _metricas(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
     res = np.asarray(y_true) - np.asarray(y_pred)
     ss_res = float((res ** 2).sum())
@@ -57,11 +60,13 @@ def _metricas(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
     }
 
 
+# @id FUN-PY-ML-022 | @categoria ML | @catalogo FUNCOES.md
 def _imprimir(rotulo: str, m: dict) -> None:
     print(f"=== {rotulo} ===")
     print(f"  MAE={m['mae_m']:.2f} m  RMSE={m['rmse_m']:.2f} m  R2={m['r2']:.3f}  n={m['n']}")
 
 
+# @id FUN-PY-ML-023 | @categoria ML | @catalogo FUNCOES.md
 def main() -> None:
     ap = argparse.ArgumentParser(description="RF039 — previsão de nível (cheia/estiagem)")
     ap.add_argument("--codigo", help="Código da estação virtual")

@@ -57,6 +57,7 @@ KW_ESTIAGEM = [
 ]
 
 
+# @id FUN-PY-COL-055 | @categoria COL | @catalogo FUNCOES.md
 def _get(session: requests.Session, url: str, params: dict | None = None) -> str:
     resp = session.get(url, params=params, headers=HEADERS, timeout=30)
     resp.raise_for_status()
@@ -64,6 +65,7 @@ def _get(session: requests.Session, url: str, params: dict | None = None) -> str
     return resp.text
 
 
+# @id FUN-PY-COL-056 | @categoria COL | @catalogo FUNCOES.md
 def buscar(session: requests.Session, termo: str, pagina: int) -> list[dict]:
     """Retorna os resultados (lista) de uma página de busca."""
     html = _get(session, URL_BUSCA, params={"q": termo, "page": pagina})
@@ -87,6 +89,7 @@ def buscar(session: requests.Session, termo: str, pagina: int) -> list[dict]:
     return resultados
 
 
+# @id FUN-PY-COL-057 | @categoria COL | @catalogo FUNCOES.md
 def extrair_detalhe(session: requests.Session, url: str) -> dict:
     """Extrai título, ementa e corpo completo da página de detalhe."""
     html = _get(session, url)
@@ -103,6 +106,7 @@ def extrair_detalhe(session: requests.Session, url: str) -> dict:
     return {"titulo": titulo, "ementa": ementa, "corpo": corpo}
 
 
+# @id FUN-PY-COL-058 | @categoria COL | @catalogo FUNCOES.md
 def parse_numero_data(titulo: str) -> tuple[str, str]:
     """Extrai (numero, data ISO) de um título tipo 'DECRETO Nº 54.712, DE 17 DE JULHO DE 2026'."""
     m = re.search(
@@ -130,6 +134,7 @@ def parse_numero_data(titulo: str) -> tuple[str, str]:
     return numero.strip(" ,."), data
 
 
+# @id FUN-PY-COL-059 | @categoria COL | @catalogo FUNCOES.md
 def classificar(texto: str) -> dict:
     """Classifica o evento hidrológico e extrai município, rio e COBRADE."""
     t = texto.upper()
@@ -172,6 +177,7 @@ def classificar(texto: str) -> dict:
     return {"tipo": tipo, "municipio": municipio, "rio": rio, "cobrade": cobrade}
 
 
+# @id FUN-PY-COL-060 | @categoria COL | @catalogo FUNCOES.md
 def main() -> None:
     ap = argparse.ArgumentParser(description="Coletor de decretos do Legisla.AM")
     ap.add_argument("--termos", help="Palavras-chave separadas por vírgula")

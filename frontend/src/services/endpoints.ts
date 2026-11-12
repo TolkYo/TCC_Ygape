@@ -3,6 +3,7 @@ import { http } from './http'
 import type {
   AtualizarUsuarioInput,
   ColetaInput,
+  ColetaJob,
   CriarUsuarioInput,
   GrafoStatus,
   ListaAlteracoes,
@@ -32,7 +33,8 @@ export const api = {
   desativarUsuario: (id: number) =>
     http.delete<{ id: number; ativo: boolean }>(`/usuarios/${id}`),
   listarEstacoes: () => http.get<ListaEstacoes>('/estacoes'),
-  coletarNiveis: (payload: ColetaInput) => http.post<unknown>('/niveis/coletar', payload),
+  coletarNiveis: (payload: ColetaInput) => http.post<ColetaJob>('/niveis/coletar', payload),
+  statusColeta: (jobId: string) => http.get<ColetaJob>(`/niveis/coletar/${jobId}`),
   grafoStatus: () => http.get<GrafoStatus>('/grafo/status'),
   listarLogs: (limite = 100) => http.get<ListaLogs>(`/logs?limite=${limite}`),
   calcularRota: (payload: RouteRequest) => http.post<RouteResult>('/rotas/calcular', payload),

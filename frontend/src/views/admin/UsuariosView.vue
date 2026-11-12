@@ -140,7 +140,7 @@ onMounted(carregar)
           v-model="novoServidor.papel"
           class="w-full rounded border border-edge bg-surface px-3 py-2 text-sm focus:outline focus:outline-2 focus:outline-primary"
         >
-          <option value="piloto">Piloto</option>
+          <option value="piloto">Capitão</option>
           <option value="admin">Administrador</option>
         </select>
       </div>
@@ -153,8 +153,60 @@ onMounted(carregar)
 
     <p v-if="carregando" class="text-sm text-ink-muted">Carregando usuários…</p>
 
-    <div v-else class="overflow-x-auto rounded-lg border border-edge">
-      <table class="w-full border-collapse text-sm">
+    <template v-else>
+      <ul class="space-y-3 lg:hidden">
+      <li
+        v-for="usuario in usuarios"
+        :key="usuario.id"
+        class="space-y-3 rounded-lg border border-edge bg-surface-elevated p-4"
+      >
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0">
+            <p class="truncate font-medium">{{ usuario.nome }}</p>
+            <p class="break-all text-xs text-ink-muted">{{ usuario.email }}</p>
+          </div>
+          <StatusBadge
+            :tom="usuario.ativo ? 'success' : 'unknown'"
+            :label="usuario.ativo ? 'Ativo' : 'Inativo'"
+          />
+        </div>
+
+        <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <label class="flex items-center gap-2 text-xs text-ink-muted">
+            Papel
+            <select
+              :value="usuario.papel"
+              :aria-label="`Papel de ${usuario.nome}`"
+              class="min-h-11 rounded border border-edge bg-surface px-2 py-1 text-sm"
+              @change="alterarPapel(usuario, ($event.target as HTMLSelectElement).value as Papel)"
+            >
+              <option value="piloto">Capitão</option>
+              <option value="admin">Administrador</option>
+            </select>
+          </label>
+          <span class="text-xs text-ink-muted">
+            Criado em {{ formatarDataHora(usuario.criado_em) }}
+          </span>
+        </div>
+
+        <BaseButton
+          class="w-full sm:w-auto"
+          :variante="usuario.ativo ? 'perigo' : 'secundaria'"
+          @click="alternarAtivo(usuario)"
+        >
+          {{ usuario.ativo ? 'Desativar' : 'Reativar' }}
+        </BaseButton>
+      </li>
+      <li
+        v-if="!usuarios.length"
+        class="rounded-lg border border-dashed border-edge p-6 text-center text-sm text-ink-muted"
+      >
+        Nenhum usuário encontrado.
+      </li>
+      </ul>
+
+      <div class="hidden overflow-x-auto rounded-lg border border-edge lg:block">
+      <table class="w-full min-w-[720px] border-collapse text-sm">
         <thead class="bg-surface-muted text-left">
           <tr>
             <th class="px-3 py-2 font-medium">Nome</th>
@@ -175,7 +227,7 @@ onMounted(carregar)
                 class="rounded border border-edge bg-surface px-2 py-1 text-xs"
                 @change="alterarPapel(usuario, ($event.target as HTMLSelectElement).value as Papel)"
               >
-                <option value="piloto">Piloto</option>
+                <option value="piloto">Capitão</option>
                 <option value="admin">Administrador</option>
               </select>
             </td>
@@ -202,6 +254,7 @@ onMounted(carregar)
           </tr>
         </tbody>
       </table>
-    </div>
+      </div>
+    </template>
   </div>
 </template>

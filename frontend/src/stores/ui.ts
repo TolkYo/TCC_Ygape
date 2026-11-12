@@ -13,6 +13,7 @@ export const useUiStore = defineStore('ui', () => {
   const altoContraste = ref(localStorage.getItem(CHAVE_CONTRASTE) === 'true')
   const escalaFonte = ref(Number(localStorage.getItem(CHAVE_FONTE) ?? '0'))
 
+  // @id FUN-TS-UI-004 | @categoria UI | @catalogo FUNCOES.md
   function aplicar(): void {
     const root = document.documentElement
     root.classList.toggle('dark', tema.value === 'escuro')
@@ -20,14 +21,17 @@ export const useUiStore = defineStore('ui', () => {
     root.style.fontSize = `${ESCALAS_FONTE[escalaFonte.value] ?? ESCALAS_FONTE[0]}px`
   }
 
+  // @id FUN-TS-UI-005 | @categoria UI | @catalogo FUNCOES.md
   function alternarTema(): void {
     tema.value = tema.value === 'claro' ? 'escuro' : 'claro'
   }
 
+  // @id FUN-TS-UI-006 | @categoria UI | @catalogo FUNCOES.md
   function alternarContraste(): void {
     altoContraste.value = !altoContraste.value
   }
 
+  // @id FUN-TS-UI-007 | @categoria UI | @catalogo FUNCOES.md
   function ciclarFonte(): void {
     escalaFonte.value = (escalaFonte.value + 1) % ESCALAS_FONTE.length
   }

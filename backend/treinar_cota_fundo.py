@@ -37,6 +37,7 @@ BASELINE_COL = "hig_drn_elevation_min"
 SQL_FEATURES = ", ".join(FEATURES)
 
 
+# @id FUN-PY-ML-013 | @categoria ML | @catalogo FUNCOES.md
 def carregar_trechos(con: sqlite3.Connection) -> dict:
     cur = con.execute(
         f"SELECT fid, {SQL_FEATURES}, geom_wkb, centroid_lon, centroid_lat "
@@ -59,12 +60,14 @@ def carregar_trechos(con: sqlite3.Connection) -> dict:
     }
 
 
+# @id FUN-PY-ML-014 | @categoria ML | @catalogo FUNCOES.md
 def carregar_nos(con: sqlite3.Connection) -> tuple[np.ndarray, np.ndarray]:
     cur = con.execute("SELECT longitude, latitude, cota_fundo FROM batimetria_sicflow")
     rows = np.array(cur.fetchall(), dtype=float)
     return rows[:, :2], rows[:, 2]
 
 
+# @id FUN-PY-ML-015 | @categoria ML | @catalogo FUNCOES.md
 def associar_cota_fundo(geoms, nos_xy, nos_cf, raio_m: float) -> tuple[np.ndarray, np.ndarray]:
     """Para cada trecho, mediana da cota_fundo dos nós num raio (m)."""
     from shapely import STRtree, points
@@ -80,6 +83,7 @@ def associar_cota_fundo(geoms, nos_xy, nos_cf, raio_m: float) -> tuple[np.ndarra
     return y, n_nos
 
 
+# @id FUN-PY-ML-016 | @categoria ML | @catalogo FUNCOES.md
 def _metricas(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
     y_true = np.asarray(y_true)
     y_pred = np.asarray(y_pred)
@@ -95,6 +99,7 @@ def _metricas(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
     }
 
 
+# @id FUN-PY-ML-017 | @categoria ML | @catalogo FUNCOES.md
 def _modelos() -> dict:
     from sklearn.ensemble import RandomForestRegressor, HistGradientBoostingRegressor
     return {
@@ -109,6 +114,7 @@ def _modelos() -> dict:
     }
 
 
+# @id FUN-PY-ML-018 | @categoria ML | @catalogo FUNCOES.md
 def main() -> None:
     ap = argparse.ArgumentParser(description="RF035 — regressão de cota de fundo")
     ap.add_argument("--raio", type=float, default=1000.0, help="Raio de associação (m)")

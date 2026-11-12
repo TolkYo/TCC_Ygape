@@ -26,12 +26,14 @@ LON0, LAT0 = -60.0, -6.0  # centro aproximado da bacia (projeção local)
 M_PER_DEG = 111320.0
 
 
+# @id FUN-PY-ML-001 | @categoria ML | @catalogo FUNCOES.md
 def _proj(lon: np.ndarray, lat: np.ndarray) -> np.ndarray:
     x = (lon - LON0) * M_PER_DEG * np.cos(np.deg2rad(LAT0))
     y = (lat - LAT0) * M_PER_DEG
     return np.column_stack([x, y])
 
 
+# @id FUN-PY-ML-002 | @categoria ML | @catalogo FUNCOES.md
 def carregar_estacoes_mes(con: sqlite3.Connection, mes: str) -> np.ndarray:
     """Retorna (longitude, latitude, nivel_medio) das estações com dado no mês."""
     cur = con.execute(
@@ -46,6 +48,7 @@ def carregar_estacoes_mes(con: sqlite3.Connection, mes: str) -> np.ndarray:
     return np.array([(r[0], r[1], r[2]) for r in rows], dtype=float)
 
 
+# @id FUN-PY-ML-003 | @categoria ML | @catalogo FUNCOES.md
 def carregar_elevacao_trechos(con: sqlite3.Connection) -> tuple[np.ndarray, np.ndarray]:
     cur = con.execute(
         "SELECT centroid_lon, centroid_lat, hig_drn_elevation_avg FROM trechos_navegaveis"
@@ -54,6 +57,7 @@ def carregar_elevacao_trechos(con: sqlite3.Connection) -> tuple[np.ndarray, np.n
     return rows[:, :2], rows[:, 2]
 
 
+# @id FUN-PY-ML-004 | @categoria ML | @catalogo FUNCOES.md
 def join_elevacao(esta_xy: np.ndarray, tre_xy: np.ndarray, tre_elev: np.ndarray) -> np.ndarray:
     from sklearn.neighbors import NearestNeighbors
     nn = NearestNeighbors(n_neighbors=1, metric="haversine").fit(
@@ -63,6 +67,7 @@ def join_elevacao(esta_xy: np.ndarray, tre_xy: np.ndarray, tre_elev: np.ndarray)
     return tre_elev[idx[:, 0]]
 
 
+# @id FUN-PY-ML-005 | @categoria ML | @catalogo FUNCOES.md
 def idw(x_train: np.ndarray, y_train: np.ndarray, x_test: np.ndarray, k: int = 12) -> np.ndarray:
     """Inverse distance weighting (1/d²) com os k vizinhos mais próximos."""
     from sklearn.neighbors import NearestNeighbors
@@ -75,6 +80,7 @@ def idw(x_train: np.ndarray, y_train: np.ndarray, x_test: np.ndarray, k: int = 1
     return num / den
 
 
+# @id FUN-PY-ML-006 | @categoria ML | @catalogo FUNCOES.md
 def _metricas(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
     res = np.asarray(y_true) - np.asarray(y_pred)
     ss_res = float((res ** 2).sum())
@@ -88,6 +94,7 @@ def _metricas(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
     }
 
 
+# @id FUN-PY-ML-007 | @categoria ML | @catalogo FUNCOES.md
 def main() -> None:
     ap = argparse.ArgumentParser(description="RF036 — interpolação de nível com ML vs IDW")
     ap.add_argument("--mes", default="2024-09", help="Mês (AAAA-MM) das observações")

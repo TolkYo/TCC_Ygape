@@ -25,6 +25,7 @@ export const useOfflineStore = defineStore('offline', () => {
   const temSnapshot = ref(false)
   const snapshotGeradoEm = ref<string | null>(null)
 
+  // @id FUN-TS-OFFLINE-001 | @categoria OFFLINE | @catalogo FUNCOES.md
   async function atualizarContadores(): Promise<void> {
     pendentes.value = await contarPendentes()
     ultimaSincronizacao.value = await lerUltimaSincronizacao()
@@ -33,6 +34,7 @@ export const useOfflineStore = defineStore('offline', () => {
     snapshotGeradoEm.value = snap?.gerado_em ?? null
   }
 
+  // @id FUN-TS-OFFLINE-002 | @categoria OFFLINE | @catalogo FUNCOES.md
   async function baixarSnapshot(): Promise<boolean> {
     erro.value = null
     try {
@@ -47,11 +49,13 @@ export const useOfflineStore = defineStore('offline', () => {
     }
   }
 
+  // @id FUN-TS-OFFLINE-003 | @categoria OFFLINE | @catalogo FUNCOES.md
   async function enfileirar(payload: SalvarRotaInput): Promise<void> {
     await enfileirarRota(payload)
     pendentes.value = await contarPendentes()
   }
 
+  // @id FUN-TS-OFFLINE-004 | @categoria OFFLINE | @catalogo FUNCOES.md
   async function enviarPendentes(): Promise<void> {
     const fila = await lerPendentes()
     for (const item of fila) {
@@ -65,6 +69,7 @@ export const useOfflineStore = defineStore('offline', () => {
     }
   }
 
+  // @id FUN-TS-OFFLINE-005 | @categoria OFFLINE | @catalogo FUNCOES.md
   async function sincronizar(): Promise<void> {
     if (!online.value || sincronizando.value) {
       return
@@ -95,6 +100,7 @@ export const useOfflineStore = defineStore('offline', () => {
     }
   }
 
+  // @id FUN-TS-OFFLINE-006 | @categoria OFFLINE | @catalogo FUNCOES.md
   function registarListeners(): () => void {
     const aoOnline = (): void => {
       online.value = true

@@ -1,23 +1,100 @@
 @import 'tailwindcss';
 
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-Italic.ttf') format('truetype');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Akko Pro';
+  src: url('/fonts/AkkoPro-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Akko Pro';
+  src: url('/fonts/AkkoPro-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Akko Pro';
+  src: url('/fonts/AkkoPro-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --color-surface: #f6f9fc;
+  --color-brand-igapo: #19535f;
+  --color-brand-correnteza: #50b2c0;
+  --color-brand-varzea: #62bbaa;
+  --color-brand-urucum: #b90a0a;
+  --color-brand-praia: #fffcf5;
+  --color-brand-bronze: #966e4b;
+  --color-brand-terracota: #b47355;
+  --color-brand-areia: #b49567;
+  --color-brand-amendoa: #d9b595;
+  --color-brand-marfim: #f8f0e3;
+
+  --color-surface: #fffcf5;
   --color-surface-elevated: #ffffff;
-  --color-surface-muted: #eaf0f7;
-  --color-ink: #0f1b2d;
-  --color-ink-muted: #55657d;
-  --color-edge: #d5deea;
-  --color-primary: #0b6bcb;
-  --color-primary-strong: #084b90;
-  --color-success: #1a7f4b;
-  --color-warning: #b7791f;
-  --color-danger: #c0342b;
-  --color-info: #2b6cb0;
+  --color-surface-muted: #f8f0e3;
+  --color-ink: #123840;
+  --color-ink-muted: #4e6a6e;
+  --color-edge: #d9cfc0;
+  --color-primary: #19535f;
+  --color-primary-strong: #0e3b44;
+  --color-accent: #50b2c0;
+  --color-success: #2f6b5f;
+  --color-warning: #8a6635;
+  --color-danger: #b90a0a;
+  --color-info: #2e6f7c;
   --color-unknown: #6b7280;
 
-  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Akko Pro', 'Poppins', system-ui, sans-serif;
 }
 
 :root {
@@ -25,12 +102,20 @@
 }
 
 html.dark {
-  --color-surface: #0e1420;
-  --color-surface-elevated: #161e2e;
-  --color-surface-muted: #1f2937;
-  --color-ink: #e7edf5;
-  --color-ink-muted: #a7b4c7;
-  --color-edge: #2b3648;
+  --color-surface: #0b2026;
+  --color-surface-elevated: #113039;
+  --color-surface-muted: #1a3d46;
+  --color-ink: #f8f0e3;
+  --color-ink-muted: #b7cfcb;
+  --color-edge: #2b5058;
+  --color-primary: #2c7a8a;
+  --color-primary-strong: #236b78;
+  --color-accent: #50b2c0;
+  --color-success: #62bbaa;
+  --color-warning: #d9b595;
+  --color-danger: #f08a8a;
+  --color-info: #50b2c0;
+  --color-unknown: #a7b4c7;
 }
 
 html.contrast-high {
@@ -47,6 +132,61 @@ body {
   background-color: var(--color-surface);
   color: var(--color-ink);
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+#app {
+  min-width: 0;
+}
+
+.brand-panel {
+  background:
+    radial-gradient(70rem 38rem at -15% -20%, rgba(80, 178, 192, 0.5), transparent 60%),
+    radial-gradient(52rem 36rem at 120% 115%, rgba(98, 187, 170, 0.38), transparent 58%),
+    linear-gradient(148deg, #19535f 0%, #0e3b44 55%, #0b2026 100%);
+}
+
+.brand-rule {
+  background: linear-gradient(90deg, #19535f 0%, #50b2c0 45%, #62bbaa 75%, #b49567 100%);
+}
+
+a:focus-visible,
+button:focus-visible,
+select:focus-visible,
+[role='tab']:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Evita zoom automático do iOS ao focar campos com fonte < 16px. */
+@media (max-width: 640px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  input:not([type='checkbox']):not([type='radio']),
+  select {
+    min-height: 2.75rem;
+  }
+}
+
+/* Áreas de toque maiores nos controles do Leaflet em telas por toque. */
+@media (pointer: coarse) {
+  .leaflet-touch .leaflet-bar a {
+    width: 2.5rem;
+    height: 2.5rem;
+    line-height: 2.5rem;
+  }
+
+  .leaflet-container .leaflet-popup-content {
+    font-size: 0.875rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

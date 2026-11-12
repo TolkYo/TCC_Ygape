@@ -54,6 +54,23 @@ export type ColetaInput = {
   periodo_fim?: string | null
 }
 
+export type ColetaStatus = 'em_andamento' | 'concluida' | 'erro'
+
+export type ColetaJob = {
+  job_id: string
+  status: ColetaStatus
+  estacoes_total: number
+  estacoes_processadas: number
+  leituras: number
+  inseridas: number
+  ignoradas: number
+  janela: { inicio: string | null; fim: string | null }
+  periodo: { inicio: string | null; fim: string | null }
+  mensagem: string | null
+  iniciado_em: string
+  finalizado_em: string | null
+}
+
 export type LogEvento = {
   id: number
   usuario_id: number | null

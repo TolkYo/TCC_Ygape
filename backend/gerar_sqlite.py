@@ -46,6 +46,7 @@ ENV_VALS = {0: 0, 1: 4, 2: 6, 3: 6, 4: 8}
 # GeoPackage Binary -> WKB + centroide
 # --------------------------------------------------------------------------- #
 
+# @id FUN-PY-ETL-006 | @categoria ETL | @catalogo FUNCOES.md
 def _gpb_wkb_off(blob: bytes) -> int:
     flags = blob[3]
     off = 4
@@ -55,10 +56,12 @@ def _gpb_wkb_off(blob: bytes) -> int:
     return off
 
 
+# @id FUN-PY-ETL-007 | @categoria ETL | @catalogo FUNCOES.md
 def _gpb_wkb(blob: bytes) -> bytes:
     return bytes(blob[_gpb_wkb_off(blob):])
 
 
+# @id FUN-PY-ETL-008 | @categoria ETL | @catalogo FUNCOES.md
 def _parse_wkb(data: bytes, off: int) -> tuple[list[list[tuple[float, float]]], int]:
     e = data[off]
     end = "<" if e == 1 else ">"
@@ -82,6 +85,7 @@ def _parse_wkb(data: bytes, off: int) -> tuple[list[list[tuple[float, float]]], 
     return lss, off
 
 
+# @id FUN-PY-ETL-009 | @categoria ETL | @catalogo FUNCOES.md
 def _gpb_centroid(blob: bytes) -> tuple[float, float]:
     off = _gpb_wkb_off(blob)
     lss, _ = _parse_wkb(blob, off)
@@ -95,6 +99,7 @@ def _gpb_centroid(blob: bytes) -> tuple[float, float]:
 # Helpers de importação
 # --------------------------------------------------------------------------- #
 
+# @id FUN-PY-ETL-010 | @categoria ETL | @catalogo FUNCOES.md
 def _num(v: str) -> float | None:
     v = (v or "").strip()
     if v == "":
@@ -105,11 +110,13 @@ def _num(v: str) -> float | None:
         return None
 
 
+# @id FUN-PY-ETL-011 | @categoria ETL | @catalogo FUNCOES.md
 def _int(v: str) -> int | None:
     x = _num(v)
     return int(x) if x is not None else None
 
 
+# @id FUN-PY-ETL-012 | @categoria ETL | @catalogo FUNCOES.md
 def _ler_csv(caminho: str, delimitador: str) -> list[dict]:
     csv.field_size_limit(sys.maxsize)
     with open(caminho, encoding="utf-8-sig", newline="") as f:
@@ -119,6 +126,7 @@ def _ler_csv(caminho: str, delimitador: str) -> list[dict]:
 LOTE_INSERCAO = 20000
 
 
+# @id FUN-PY-ETL-013 | @categoria ETL | @catalogo FUNCOES.md
 def _iter_csv(caminho: str, delimitador: str):
     """Itera as linhas de um CSV sem carregar o arquivo inteiro na memoria."""
     csv.field_size_limit(sys.maxsize)
@@ -126,6 +134,7 @@ def _iter_csv(caminho: str, delimitador: str):
         yield from csv.DictReader(f, delimiter=delimitador)
 
 
+# @id FUN-PY-ETL-014 | @categoria ETL | @catalogo FUNCOES.md
 def _inserir_em_lotes(con: sqlite3.Connection, sql: str, linhas) -> int:
     """Executa um iteravel de tuplas em lotes, devolvendo o total inserido."""
     lote: list[tuple] = []
@@ -173,6 +182,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_series_sat_cod ON series_nivel_satelite (c
 """
 
 
+# @id FUN-PY-ETL-015 | @categoria ETL | @catalogo FUNCOES.md
 def _real(v):
     if v is None or v == "":
         return None
@@ -181,10 +191,12 @@ def _real(v):
     return _num(v)
 
 
+# @id FUN-PY-ETL-016 | @categoria ETL | @catalogo FUNCOES.md
 def criar_schema_satelite(con: sqlite3.Connection) -> None:
     con.executescript(SQL_SATELITE)
 
 
+# @id FUN-PY-ETL-017 | @categoria ETL | @catalogo FUNCOES.md
 def upsert_estacoes_virtuais(con: sqlite3.Connection, linhas) -> int:
     def gerador():
         for l in linhas:
@@ -203,6 +215,7 @@ def upsert_estacoes_virtuais(con: sqlite3.Connection, linhas) -> int:
     )
 
 
+# @id FUN-PY-ETL-018 | @categoria ETL | @catalogo FUNCOES.md
 def upsert_series_nivel_satelite(con: sqlite3.Connection, linhas) -> int:
     def gerador():
         for l in linhas:
@@ -226,10 +239,12 @@ def upsert_series_nivel_satelite(con: sqlite3.Connection, linhas) -> int:
 AMAZON_BBOX = (-80.0, -21.0, -48.0, 6.0)
 
 # Formato SWORD: node_id = CBBBBBRRRRNNNT; reach_id = CBBBBBRRRRT.
+# @id FUN-PY-ETL-019 | @categoria ETL | @catalogo FUNCOES.md
 def _reach_de_node(node_id: int) -> int:
     return (node_id // 10000) * 10 + (node_id % 10)
 
 
+# @id FUN-PY-ETL-020 | @categoria ETL | @catalogo FUNCOES.md
 def _batimetria_cols() -> str:
     elev = ", ".join(f"elev_{i:02d} REAL" for i in range(1, 13))
     larg = ", ".join(f"larg_{i:02d} REAL" for i in range(1, 13))
@@ -237,6 +252,7 @@ def _batimetria_cols() -> str:
     return ", ".join([elev, larg, met])
 
 
+# @id FUN-PY-ETL-021 | @categoria ETL | @catalogo FUNCOES.md
 def _batimetria_valores() -> list[str]:
     v: list[str] = []
     for p in ("elev", "larg", "metodo"):
@@ -274,11 +290,13 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_vazao_reach_data ON series_vazao_satelite 
 """
 
 
+# @id FUN-PY-ETL-016 | @categoria ETL | @catalogo FUNCOES.md
 def criar_schema_satelite(con: sqlite3.Connection) -> None:
     con.executescript(SQL_SATELITE)
     con.executescript(SQL_BATIMETRIA)
 
 
+# @id FUN-PY-ETL-022 | @categoria ETL | @catalogo FUNCOES.md
 def upsert_batimetria_sicflow(con: sqlite3.Connection, linhas: list[tuple]) -> int:
     cols = ["node_id", "reach_id", "longitude", "latitude", "h_interface",
             "cota_fundo", "cota_banco_max", "largura_m", "metodo_fundo", "fonte"]
@@ -289,6 +307,7 @@ def upsert_batimetria_sicflow(con: sqlite3.Connection, linhas: list[tuple]) -> i
     return len(linhas)
 
 
+# @id FUN-PY-ETL-023 | @categoria ETL | @catalogo FUNCOES.md
 def upsert_series_vazao_satelite(con: sqlite3.Connection, linhas: list[tuple]) -> int:
     con.executemany(
         "INSERT OR IGNORE INTO series_vazao_satelite "
@@ -297,6 +316,7 @@ def upsert_series_vazao_satelite(con: sqlite3.Connection, linhas: list[tuple]) -
     return len(linhas)
 
 
+# @id FUN-PY-ETL-024 | @categoria ETL | @catalogo FUNCOES.md
 def _nc_satelite(pasta_coleta: str, prefixo: str) -> str | None:
     raiz = os.path.join(SATELITE, pasta_coleta)
     if not os.path.isdir(raiz):
@@ -315,6 +335,7 @@ def _nc_satelite(pasta_coleta: str, prefixo: str) -> str | None:
 BLOCO_NOS = 200_000  # nós lidos por vez do NetCDF (limita o pico de RAM)
 
 
+# @id FUN-PY-ETL-025 | @categoria ETL | @catalogo FUNCOES.md
 def importar_batimetria_sicflow(con: sqlite3.Connection) -> int:
     nc = _nc_satelite("batimetria", "sa_")
     if nc is None:
@@ -395,6 +416,7 @@ def importar_batimetria_sicflow(con: sqlite3.Connection) -> int:
     return n
 
 
+# @id FUN-PY-ETL-026 | @categoria ETL | @catalogo FUNCOES.md
 def importar_series_vazao_satelite(con: sqlite3.Connection) -> int:
     nc = _nc_satelite("vazao", "sa_")
     if nc is None:
@@ -469,6 +491,7 @@ CREATE INDEX IF NOT EXISTS idx_nivel_semanal_data ON nivel_semanal (semana_inici
 """
 
 
+# @id FUN-PY-ETL-027 | @categoria ETL | @catalogo FUNCOES.md
 def criar_schema_diarias(con: sqlite3.Connection) -> None:
     con.executescript(SQL_DIARIAS)
 
@@ -477,6 +500,7 @@ def criar_schema_diarias(con: sqlite3.Connection) -> None:
 # Criação do schema
 # --------------------------------------------------------------------------- #
 
+# @id FUN-PY-ETL-028 | @categoria ETL | @catalogo FUNCOES.md
 def criar_schema(con: sqlite3.Connection) -> None:
     con.executescript(
         """
@@ -622,6 +646,7 @@ def criar_schema(con: sqlite3.Connection) -> None:
 # Importadores por tabela
 # --------------------------------------------------------------------------- #
 
+# @id FUN-PY-ETL-029 | @categoria ETL | @catalogo FUNCOES.md
 def importar_estacoes(con: sqlite3.Connection) -> int:
     caminho = os.path.join(PLANILHAS, "estacoes_am_enriquecidas.csv")
 
@@ -640,6 +665,7 @@ def importar_estacoes(con: sqlite3.Connection) -> int:
         gerador())
 
 
+# @id FUN-PY-ETL-030 | @categoria ETL | @catalogo FUNCOES.md
 def importar_rios(con: sqlite3.Connection) -> int:
     caminho = os.path.join(PLANILHAS, "rios_ana.csv")
 
@@ -655,6 +681,7 @@ def importar_rios(con: sqlite3.Connection) -> int:
         con, "INSERT OR REPLACE INTO rios VALUES (?,?,?,?,?,?)", gerador())
 
 
+# @id FUN-PY-ETL-031 | @categoria ETL | @catalogo FUNCOES.md
 def importar_telemetria(con: sqlite3.Connection) -> int:
     caminho = os.path.join(PLANILHAS, "telemetria_cotas_am.csv")
 
@@ -674,6 +701,7 @@ def importar_telemetria(con: sqlite3.Connection) -> int:
         gerador())
 
 
+# @id FUN-PY-ETL-032 | @categoria ETL | @catalogo FUNCOES.md
 def importar_cotas_historicas(con: sqlite3.Connection) -> int:
     caminho = os.path.join(PLANILHAS, "cotas_historicas_am.csv")
 
@@ -691,6 +719,7 @@ def importar_cotas_historicas(con: sqlite3.Connection) -> int:
         gerador())
 
 
+# @id FUN-PY-ETL-033 | @categoria ETL | @catalogo FUNCOES.md
 def importar_navegabilidade(con: sqlite3.Connection) -> int:
     caminho = os.path.join(PLANILHAS, "estacoes_am_navegabilidade.csv")
 
@@ -708,6 +737,7 @@ def importar_navegabilidade(con: sqlite3.Connection) -> int:
         gerador())
 
 
+# @id FUN-PY-ETL-034 | @categoria ETL | @catalogo FUNCOES.md
 def importar_decretos(con: sqlite3.Connection) -> int:
     caminho = os.path.join(PLANILHAS, "decretos_legisla_am.csv")
     if not os.path.exists(caminho):
@@ -728,6 +758,7 @@ def importar_decretos(con: sqlite3.Connection) -> int:
         gerador())
 
 
+# @id FUN-PY-ETL-035 | @categoria ETL | @catalogo FUNCOES.md
 def importar_estacoes_trechos(con: sqlite3.Connection) -> int:
     caminho = os.path.join(PLANILHAS, "estacoes_am_x_hidrovias_navegaveis.csv")
 
@@ -745,6 +776,7 @@ def importar_estacoes_trechos(con: sqlite3.Connection) -> int:
         con, "INSERT INTO estacoes_trechos VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", gerador())
 
 
+# @id FUN-PY-ETL-036 | @categoria ETL | @catalogo FUNCOES.md
 def importar_trechos(con: sqlite3.Connection) -> int:
     src = sqlite3.connect(GPKG)
     cur = src.execute(
@@ -776,6 +808,7 @@ def importar_trechos(con: sqlite3.Connection) -> int:
     return n
 
 
+# @id FUN-PY-ETL-037 | @categoria ETL | @catalogo FUNCOES.md
 def importar_estacoes_virtuais(con: sqlite3.Connection) -> int:
     caminho = os.path.join(SATELITE, "estacoes_virtuais.csv")
     if not os.path.exists(caminho):
@@ -789,6 +822,7 @@ def importar_estacoes_virtuais(con: sqlite3.Connection) -> int:
     return upsert_estacoes_virtuais(con, gerador())
 
 
+# @id FUN-PY-ETL-038 | @categoria ETL | @catalogo FUNCOES.md
 def importar_series_nivel_satelite(con: sqlite3.Connection) -> int:
     caminho = os.path.join(SATELITE, "series_nivel_satelite.csv")
     if not os.path.exists(caminho):
@@ -802,6 +836,7 @@ def importar_series_nivel_satelite(con: sqlite3.Connection) -> int:
     return upsert_series_nivel_satelite(con, gerador())
 
 
+# @id FUN-PY-ETL-039 | @categoria ETL | @catalogo FUNCOES.md
 def importar_cotas_diarias(con: sqlite3.Connection) -> int:
     caminho = os.path.join(PLANILHAS, "cotas_diarias_am.csv")
     if not os.path.exists(caminho):
@@ -821,6 +856,7 @@ def importar_cotas_diarias(con: sqlite3.Connection) -> int:
         gerador())
 
 
+# @id FUN-PY-ETL-040 | @categoria ETL | @catalogo FUNCOES.md
 def gerar_nivel_semanal(con: sqlite3.Connection) -> int:
     """Agrega cotas_diarias em uma linha por (estação, semana ISO).
 
@@ -871,6 +907,7 @@ def gerar_nivel_semanal(con: sqlite3.Connection) -> int:
     return len(linhas)
 
 
+# @id FUN-PY-ETL-041 | @categoria ETL | @catalogo FUNCOES.md
 def main() -> None:
     ap = argparse.ArgumentParser(description="Consolida os dados coletados em SQLite")
     ap.add_argument("--out", default=os.path.join(DATA, "hidrowize.db"))

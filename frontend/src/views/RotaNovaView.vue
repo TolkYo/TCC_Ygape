@@ -145,13 +145,14 @@ const rotuloSalvar = computed(() => {
         Rota calculada <strong>offline</strong> (sem conexão com o servidor) a partir do snapshot local.
       </p>
       <div class="grid gap-4 lg:grid-cols-[1fr_360px]">
-        <RiverMap :estacoes="estacoes.itens" :rota="rota.resultado" altura="60vh" />
+        <RiverMap :estacoes="estacoes.itens" :rota="rota.resultado" altura="clamp(20rem, 52vh, 38rem)" />
         <RouteSummary :resultado="rota.resultado" />
       </div>
 
       <div class="flex flex-wrap items-center gap-3">
         <BaseButton
           v-if="session.autenticado"
+          class="w-full sm:w-auto"
           :desabilitado="rota.salvando || rota.idSalvo !== null"
           @click="rota.salvar()"
         >

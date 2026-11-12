@@ -63,6 +63,7 @@ FORMATOS_DATA = [
 ]
 
 
+# @id FUN-PY-COL-032 | @categoria COL | @catalogo FUNCOES.md
 def _get(url: str, params: dict | None = None) -> dict:
     resp = requests.get(url, params=params, timeout=120,
                         headers={"User-Agent": "hidrowize/0.1"})
@@ -70,6 +71,7 @@ def _get(url: str, params: dict | None = None) -> dict:
     return resp.json()
 
 
+# @id FUN-PY-COL-033 | @categoria COL | @catalogo FUNCOES.md
 def _api_key() -> str:
     chave = os.getenv("HYDROWEB_API_KEY")
     if not chave:
@@ -80,6 +82,7 @@ def _api_key() -> str:
     return chave
 
 
+# @id FUN-PY-COL-034 | @categoria COL | @catalogo FUNCOES.md
 def _extrair_meta(feature: dict) -> dict:
     codigo = feature["id"].split("@")[0]
     partes = codigo.split("_")
@@ -100,6 +103,7 @@ def _extrair_meta(feature: dict) -> dict:
     }
 
 
+# @id FUN-PY-COL-035 | @categoria COL | @catalogo FUNCOES.md
 def listar_estacoes(bbox: list[float]) -> list[dict]:
     itens: list[dict] = []
     params: dict | None = {
@@ -119,6 +123,7 @@ def listar_estacoes(bbox: list[float]) -> list[dict]:
     return [_extrair_meta(f) for f in itens]
 
 
+# @id FUN-PY-COL-036 | @categoria COL | @catalogo FUNCOES.md
 def _baixar_zip(collection_id: str, bbox: list[float], zip_nome: str, subpasta: str) -> Path:
     import py_hydroweb
 
@@ -136,6 +141,7 @@ def _baixar_zip(collection_id: str, bbox: list[float], zip_nome: str, subpasta: 
     return Path(caminho)
 
 
+# @id FUN-PY-COL-037 | @categoria COL | @catalogo FUNCOES.md
 def _extrair_zip(zip_path: Path, subpasta: str) -> Path:
     destino = SAIDA / subpasta
     with zipfile.ZipFile(zip_path) as z:
@@ -144,6 +150,7 @@ def _extrair_zip(zip_path: Path, subpasta: str) -> Path:
     return destino
 
 
+# @id FUN-PY-COL-038 | @categoria COL | @catalogo FUNCOES.md
 def _parse_data(valor: str) -> str | None:
     valor = valor.strip()
     for fmt in FORMATOS_DATA:
@@ -154,6 +161,7 @@ def _parse_data(valor: str) -> str | None:
     return None
 
 
+# @id FUN-PY-COL-039 | @categoria COL | @catalogo FUNCOES.md
 def _parse_numero(valor: str) -> float | None:
     try:
         return float(valor.replace(",", "."))
@@ -161,6 +169,7 @@ def _parse_numero(valor: str) -> float | None:
         return None
 
 
+# @id FUN-PY-COL-040 | @categoria COL | @catalogo FUNCOES.md
 def _delimitador(linha: str) -> str | None:
     for d in (";", "\t", ","):
         if d in linha:
@@ -168,6 +177,7 @@ def _delimitador(linha: str) -> str | None:
     return None
 
 
+# @id FUN-PY-COL-041 | @categoria COL | @catalogo FUNCOES.md
 def parsear_serie_txt(caminho: Path) -> list[dict]:
     """Converte um arquivo .txt de estação virtual em registros (data, nivel, incerteza)."""
     linhas = []
@@ -198,6 +208,7 @@ def parsear_serie_txt(caminho: Path) -> list[dict]:
     return registros
 
 
+# @id FUN-PY-COL-042 | @categoria COL | @catalogo FUNCOES.md
 def _codigo_de_nome(nome: str) -> str:
     codigo = nome
     if codigo.startswith("hydroprd_"):
@@ -211,6 +222,7 @@ def _codigo_de_nome(nome: str) -> str:
     return codigo
 
 
+# @id FUN-PY-COL-043 | @categoria COL | @catalogo FUNCOES.md
 def _salvar_csv(linhas: list[dict], campos: list[str], caminho: Path) -> None:
     with open(caminho, "w", newline="", encoding="utf-8-sig") as f:
         writer = csv.DictWriter(f, fieldnames=campos, delimiter=";")
@@ -218,6 +230,7 @@ def _salvar_csv(linhas: list[dict], campos: list[str], caminho: Path) -> None:
         writer.writerows(linhas)
 
 
+# @id FUN-PY-COL-044 | @categoria COL | @catalogo FUNCOES.md
 def _persistir_satelite(estacoes: list[dict], series: list[dict], fonte: str) -> tuple[int, int]:
     from gerar_sqlite import (
         criar_schema_satelite,
@@ -237,6 +250,7 @@ def _persistir_satelite(estacoes: list[dict], series: list[dict], fonte: str) ->
     return n_est, n_ser
 
 
+# @id FUN-PY-COL-045 | @categoria COL | @catalogo FUNCOES.md
 def _persistir_netcdf(importador: str, rotulo: str) -> int:
     import importlib
 
@@ -252,6 +266,7 @@ def _persistir_netcdf(importador: str, rotulo: str) -> int:
     return n
 
 
+# @id FUN-PY-COL-046 | @categoria COL | @catalogo FUNCOES.md
 def _contar_tabela(tabela: str) -> int:
     if not DB.exists():
         return 0
@@ -265,6 +280,7 @@ def _contar_tabela(tabela: str) -> int:
         con.close()
 
 
+# @id FUN-PY-COL-047 | @categoria COL | @catalogo FUNCOES.md
 def _limpar_subpasta(subpasta: str) -> None:
     pasta = SAIDA / subpasta
     if pasta.exists():
@@ -272,6 +288,7 @@ def _limpar_subpasta(subpasta: str) -> None:
         print(f"Arquivos intermediários removidos: {pasta}")
 
 
+# @id FUN-PY-COL-048 | @categoria COL | @catalogo FUNCOES.md
 def comando_listar(bbox: list[float]) -> None:
     estacoes = listar_estacoes(bbox)
     print(f"{len(estacoes)} estações virtuais no bbox {bbox}")
@@ -287,6 +304,7 @@ def comando_listar(bbox: list[float]) -> None:
     print(f"DB: {n_est} estações persistidas em {DB}")
 
 
+# @id FUN-PY-COL-049 | @categoria COL | @catalogo FUNCOES.md
 def _consolidar_series(pasta: Path, mapa: dict) -> tuple[int, int]:
     """Grava o CSV de séries e persiste no banco em streaming (baixa RAM).
 
@@ -343,6 +361,7 @@ def _consolidar_series(pasta: Path, mapa: dict) -> tuple[int, int]:
     return total, nao_mapeadas
 
 
+# @id FUN-PY-COL-050 | @categoria COL | @catalogo FUNCOES.md
 def comando_estacoes(bbox: list[float], forcar: bool = False) -> None:
     estacoes = listar_estacoes(bbox)
     mapa = {e["codigo"]: e for e in estacoes}
@@ -367,6 +386,7 @@ def comando_estacoes(bbox: list[float], forcar: bool = False) -> None:
     _limpar_subpasta("estacoes_virtuais")
 
 
+# @id FUN-PY-COL-051 | @categoria COL | @catalogo FUNCOES.md
 def comando_batimetria(bbox: list[float], forcar: bool = False) -> None:
     if not forcar and _contar_tabela("batimetria_sicflow") > 0:
         print("batimetria_sicflow já populada — pulando download "
@@ -380,6 +400,7 @@ def comando_batimetria(bbox: list[float], forcar: bool = False) -> None:
     _limpar_subpasta("batimetria")
 
 
+# @id FUN-PY-COL-052 | @categoria COL | @catalogo FUNCOES.md
 def comando_vazao(bbox: list[float], forcar: bool = False) -> None:
     if not forcar and _contar_tabela("series_vazao_satelite") > 0:
         print("series_vazao_satelite já populada — pulando download "
@@ -391,10 +412,12 @@ def comando_vazao(bbox: list[float], forcar: bool = False) -> None:
     _limpar_subpasta("vazao")
 
 
+# @id FUN-PY-COL-053 | @categoria COL | @catalogo FUNCOES.md
 def _parse_bbox(texto: str) -> list[float]:
     return [float(x) for x in texto.split(",")]
 
 
+# @id FUN-PY-COL-054 | @categoria COL | @catalogo FUNCOES.md
 def main() -> None:
     parser = argparse.ArgumentParser(description="Coletor de dados satelitais hydroweb.next")
     parser.add_argument("--listar", action="store_true", help="Lista estações virtuais na bacia")

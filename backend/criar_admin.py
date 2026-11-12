@@ -12,6 +12,7 @@ from db import connection, ensure_schema
 from main import password_hash
 
 
+# @id FUN-PY-ADMIN-001 | @categoria ADMIN | @catalogo FUNCOES.md
 def main() -> None:
     parser = argparse.ArgumentParser(description="Cria ou atualiza um administrador da API")
     parser.add_argument("--nome", required=True)

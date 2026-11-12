@@ -1,3 +1,4 @@
+// @id FUN-TS-UI-001 | @categoria UI | @catalogo FUNCOES.md
 export function formatarNumero(valor: number | null | undefined, digitos = 1): string {
   if (valor === null || valor === undefined || Number.isNaN(valor)) {
     return '—'
@@ -8,6 +9,7 @@ export function formatarNumero(valor: number | null | undefined, digitos = 1): s
   })
 }
 
+// @id FUN-TS-UI-002 | @categoria UI | @catalogo FUNCOES.md
 export function formatarInteiro(valor: number | null | undefined): string {
   if (valor === null || valor === undefined || Number.isNaN(valor)) {
     return '—'
@@ -15,6 +17,7 @@ export function formatarInteiro(valor: number | null | undefined): string {
   return valor.toLocaleString('pt-BR')
 }
 
+// @id FUN-TS-UI-003 | @categoria UI | @catalogo FUNCOES.md
 export function formatarDataHora(valor: string | null | undefined): string {
   if (!valor) {
     return '—'

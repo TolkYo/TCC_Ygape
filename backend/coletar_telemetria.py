@@ -36,6 +36,7 @@ CAMPOS = [
 ]
 
 
+# @id FUN-PY-COL-020 | @categoria COL | @catalogo FUNCOES.md
 def carregar_csv(caminho: Path) -> list[dict]:
     if not caminho.exists():
         return []
@@ -43,6 +44,7 @@ def carregar_csv(caminho: Path) -> list[dict]:
         return list(csv.DictReader(f, delimiter=";"))
 
 
+# @id FUN-PY-COL-021 | @categoria COL | @catalogo FUNCOES.md
 def salvar_csv(linhas: list[dict], caminho: Path) -> None:
     with open(caminho, "w", newline="", encoding="utf-8-sig") as f:
         writer = csv.DictWriter(f, fieldnames=CAMPOS, delimiter=";")
@@ -50,6 +52,7 @@ def salvar_csv(linhas: list[dict], caminho: Path) -> None:
         writer.writerows(linhas)
 
 
+# @id FUN-PY-COL-022 | @categoria COL | @catalogo FUNCOES.md
 def estacoes_telemetricas() -> list[str]:
     if CSV_ENRIQUECIDO.exists():
         linhas = carregar_csv(CSV_ENRIQUECIDO)
@@ -61,6 +64,7 @@ def estacoes_telemetricas() -> list[str]:
     return [l["codigo_estacao"].strip() for l in carregar_csv(CSV_BASE)]
 
 
+# @id FUN-PY-COL-023 | @categoria COL | @catalogo FUNCOES.md
 def baixar_lote(cliente: ana_client.AnaClient, codigos: list[str], data_busca: str) -> list[dict]:
     dados = cliente._get(
         "/EstacoesTelemetricas/HidroinfoanaSerieTelemetricaAdotada/v2",
@@ -89,6 +93,7 @@ def baixar_lote(cliente: ana_client.AnaClient, codigos: list[str], data_busca: s
     return novos
 
 
+# @id FUN-PY-COL-024 | @categoria COL | @catalogo FUNCOES.md
 def resumo_telemetria() -> None:
     linhas = carregar_csv(SAIDA)
     if not linhas:
@@ -113,6 +118,7 @@ def resumo_telemetria() -> None:
         )
 
 
+# @id FUN-PY-COL-025 | @categoria COL | @catalogo FUNCOES.md
 def main() -> None:
     parser = argparse.ArgumentParser(description="Coletor incremental de telemetria ANA")
     parser.add_argument("--resumo", action="store_true", help="Mostra resumo acumulado")

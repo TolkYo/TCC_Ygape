@@ -1,5 +1,13 @@
-const CACHE = 'ygape-v1'
-const APP_SHELL = ['/', '/index.html', '/manifest.webmanifest', '/favicon.svg', '/icons.svg']
+const CACHE = 'ygape-v2'
+const APP_SHELL = [
+  '/',
+  '/index.html',
+  '/manifest.webmanifest',
+  '/brand/icone.png',
+  '/brand/logo-horizontal-claro.png',
+  '/brand/logo-horizontal-escuro.png',
+  '/icons.svg',
+]
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -22,6 +30,7 @@ self.addEventListener('activate', (event) => {
   )
 })
 
+// @id FUN-JS-UI-001 | @categoria UI | @catalogo FUNCOES.md
 async function staleWhileRevalidate(request) {
   const cache = await caches.open(CACHE)
   const cached = await cache.match(request)

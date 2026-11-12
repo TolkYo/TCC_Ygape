@@ -1,9 +1,11 @@
 import { onMounted, onUnmounted, ref } from 'vue'
 
+// @id FUN-TS-UI-008 | @categoria UI | @catalogo FUNCOES.md
 export function useConnectivity() {
   const online = ref(typeof navigator === 'undefined' ? true : navigator.onLine)
   const ultimaMudanca = ref<Date | null>(null)
 
+  // @id FUN-TS-UI-009 | @categoria UI | @catalogo FUNCOES.md
   function atualizar(): void {
     online.value = navigator.onLine
     ultimaMudanca.value = new Date()

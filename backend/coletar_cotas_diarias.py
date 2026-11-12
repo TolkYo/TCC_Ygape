@@ -41,6 +41,7 @@ CANDIDATOS_ESTACOES = (
 SAIDA = PLANILHAS / "cotas_diarias_am.csv"
 
 
+# @id FUN-PY-COL-026 | @categoria COL | @catalogo FUNCOES.md
 def localizar_estacoes() -> Path:
     for caminho in CANDIDATOS_ESTACOES:
         if caminho.exists():
@@ -51,11 +52,13 @@ def localizar_estacoes() -> Path:
     )
 
 
+# @id FUN-PY-COL-027 | @categoria COL | @catalogo FUNCOES.md
 def carregar_csv(caminho: Path) -> list[dict]:
     with open(caminho, encoding="utf-8-sig") as f:
         return list(csv.DictReader(f, delimiter=";"))
 
 
+# @id FUN-PY-COL-028 | @categoria COL | @catalogo FUNCOES.md
 def salvar_csv(linhas: list[dict], caminho: Path) -> None:
     caminho.parent.mkdir(parents=True, exist_ok=True)
     campos = ["codigo_estacao", "nome_estacao", "data", "cota_cm",
@@ -66,6 +69,7 @@ def salvar_csv(linhas: list[dict], caminho: Path) -> None:
         writer.writerows(linhas)
 
 
+# @id FUN-PY-COL-029 | @categoria COL | @catalogo FUNCOES.md
 def coletar_estacao(codigo: str, anos: int, ano_atual: int) -> dict[str, dict]:
     """Retorna {data: linha} mesclando consistido (2) e bruto (1)."""
     data_inicio = f"01/01/{ano_atual - anos + 1}"
@@ -83,6 +87,7 @@ def coletar_estacao(codigo: str, anos: int, ano_atual: int) -> dict[str, dict]:
     return por_data
 
 
+# @id FUN-PY-COL-030 | @categoria COL | @catalogo FUNCOES.md
 def main() -> None:
     parser = argparse.ArgumentParser(description="Coleta cotas diarias das estacoes AM")
     parser.add_argument("--anos", type=int, default=5, help="Janela historica (default 5)")

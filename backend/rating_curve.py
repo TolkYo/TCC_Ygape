@@ -21,6 +21,7 @@ RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB = os.path.join(RAIZ, "data", "hidrowize.db")
 
 
+# @id FUN-PY-ML-008 | @categoria ML | @catalogo FUNCOES.md
 def carregar_dados(con: sqlite3.Connection) -> dict:
     """Pares (nível, vazão) + geometria AHGN do trecho mais próximo da estação."""
     cur = con.execute(
@@ -45,6 +46,7 @@ def carregar_dados(con: sqlite3.Connection) -> dict:
     }
 
 
+# @id FUN-PY-ML-009 | @categoria ML | @catalogo FUNCOES.md
 def _features(d: dict) -> np.ndarray:
     return np.column_stack([
         d["cota_m"], d["largura"], d["profundidade"],
@@ -52,6 +54,7 @@ def _features(d: dict) -> np.ndarray:
     ])
 
 
+# @id FUN-PY-ML-010 | @categoria ML | @catalogo FUNCOES.md
 def _metricas(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
     y_true = np.asarray(y_true)
     y_pred = np.asarray(y_pred)
@@ -69,12 +72,14 @@ def _metricas(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
     }
 
 
+# @id FUN-PY-ML-011 | @categoria ML | @catalogo FUNCOES.md
 def _imprimir(rotulo: str, m: dict) -> None:
     print(f"=== {rotulo} ===")
     print(f"  MAE={m['mae_m3s']:,.0f} m3/s  RMSE={m['rmse_m3s']:,.0f} m3/s  "
           f"R2={m['r2']:.3f}  MAE_log10={m['mae_log10']:.3f}  n={m['n']}")
 
 
+# @id FUN-PY-ML-012 | @categoria ML | @catalogo FUNCOES.md
 def main() -> None:
     con = sqlite3.connect(DB)
     try:

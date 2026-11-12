@@ -26,6 +26,7 @@ NIVEL_BRUTO = "1"
 NIVEL_CONSISTIDO = "2"
 
 
+# @id FUN-PY-COL-013 | @categoria COL | @catalogo FUNCOES.md
 def serie_historica(
     cod_estacao: str,
     data_inicio: str,
@@ -60,6 +61,7 @@ def serie_historica(
     return rows
 
 
+# @id FUN-PY-COL-014 | @categoria COL | @catalogo FUNCOES.md
 def _cota_diaria_valida(valor: str | None) -> float | None:
     """Converte uma cota diaria (CotaNN) em float, descartando leituras invalidas.
 
@@ -75,6 +77,7 @@ def _cota_diaria_valida(valor: str | None) -> float | None:
     return v if 0 < v < 100000 else None
 
 
+# @id FUN-PY-COL-015 | @categoria COL | @catalogo FUNCOES.md
 def _ano_mes(data_hora: str) -> tuple[int, int] | None:
     """Extrai (ano, mes) de um DataHora no formato 'YYYY-MM-DD HH:MM:SS'."""
     if len(data_hora) < 7 or data_hora[4] != "-":
@@ -85,6 +88,7 @@ def _ano_mes(data_hora: str) -> tuple[int, int] | None:
         return None
 
 
+# @id FUN-PY-COL-016 | @categoria COL | @catalogo FUNCOES.md
 def serie_diaria(
     cod_estacao: str,
     data_inicio: str,
@@ -111,6 +115,7 @@ def serie_diaria(
     return _expandir_diaria(cod_estacao, rows, nivel_consistencia)
 
 
+# @id FUN-PY-COL-017 | @categoria COL | @catalogo FUNCOES.md
 def _expandir_diaria(
     cod_estacao: str,
     rows: list[dict[str, str]],
@@ -145,6 +150,7 @@ def _expandir_diaria(
     return saida
 
 
+# @id FUN-PY-COL-018 | @categoria COL | @catalogo FUNCOES.md
 def resumo_cotas(
     cod_estacao: str,
     anos: int = 5,
@@ -178,6 +184,7 @@ def resumo_cotas(
     return _estatisticas(cod_estacao, registros, "+".join(niveis_ok))
 
 
+# @id FUN-PY-COL-019 | @categoria COL | @catalogo FUNCOES.md
 def _estatisticas(cod_estacao: str, rows: list[dict], nivel: str) -> dict[str, Any]:
     def _ok(valor: str, status: str) -> float | None:
         if status not in ("", "0"):

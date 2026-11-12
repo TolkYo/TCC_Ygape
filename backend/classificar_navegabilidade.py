@@ -24,6 +24,7 @@ DB = os.path.join(RAIZ, "data", "hidrowize.db")
 LIMIAR_CM = 50.0  # RN010/RF018: margem de 50 cm sobre a cota mínima
 
 
+# @id FUN-PY-NAV-014 | @categoria NAV | @catalogo FUNCOES.md
 def main() -> None:
     con = sqlite3.connect(DB)
     try:

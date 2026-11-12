@@ -7,6 +7,7 @@ import type { PerfilUpdateInput, Usuario } from '@/types/api'
 
 const USUARIO_KEY = 'hidrowize-usuario'
 
+// @id FUN-TS-AUTH-001 | @categoria AUTH | @catalogo FUNCOES.md
 function lerUsuarioCache(): Usuario | null {
   const cru = localStorage.getItem(USUARIO_KEY)
   if (!cru) {
@@ -19,6 +20,7 @@ function lerUsuarioCache(): Usuario | null {
   }
 }
 
+// @id FUN-TS-AUTH-002 | @categoria AUTH | @catalogo FUNCOES.md
 function guardarUsuarioCache(usuario: Usuario | null): void {
   if (usuario) {
     localStorage.setItem(USUARIO_KEY, JSON.stringify(usuario))
@@ -34,6 +36,7 @@ export const useSessionStore = defineStore('session', () => {
   const autenticado = computed(() => usuario.value !== null)
   const ehAdmin = computed(() => usuario.value?.papel === 'admin')
 
+  // @id FUN-TS-AUTH-003 | @categoria AUTH | @catalogo FUNCOES.md
   async function login(email: string, senha: string): Promise<Usuario> {
     carregando.value = true
     try {
@@ -47,6 +50,7 @@ export const useSessionStore = defineStore('session', () => {
     }
   }
 
+  // @id FUN-TS-AUTH-004 | @categoria AUTH | @catalogo FUNCOES.md
   async function restaurar(): Promise<void> {
     if (!getToken()) {
       return
@@ -66,12 +70,14 @@ export const useSessionStore = defineStore('session', () => {
     }
   }
 
+  // @id FUN-TS-AUTH-005 | @categoria AUTH | @catalogo FUNCOES.md
   function logout(): void {
     setToken(null)
     usuario.value = null
     guardarUsuarioCache(null)
   }
 
+  // @id FUN-TS-AUTH-006 | @categoria AUTH | @catalogo FUNCOES.md
   async function atualizarPerfil(input: PerfilUpdateInput): Promise<Usuario> {
     const atualizado = await api.atualizarPerfil(input)
     usuario.value = atualizado

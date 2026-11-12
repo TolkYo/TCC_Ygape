@@ -18,7 +18,7 @@ const classes = computed(() => paleta[props.tom ?? 'unknown'])
 
 <template>
   <span
-    class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
+    class="inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
     :class="classes"
   >
     {{ label }}

@@ -14,6 +14,7 @@ export type Aviso = {
 
 const INTERVALO_POLL_MS = 5 * 60 * 1000
 
+// @id FUN-TS-NOTIFY-001 | @categoria NOTIFY | @catalogo FUNCOES.md
 function urlWebSocket(token: string): string {
   let base = apiBaseUrl
   if (base.startsWith('http')) {
@@ -36,6 +37,7 @@ export const useNotificacaoStore = defineStore('notificacao', () => {
   let sequencia = 0
   const vistos = new Set<number>()
 
+  // @id FUN-TS-NOTIFY-002 | @categoria NOTIFY | @catalogo FUNCOES.md
   function registar(evento: EventoRota): void {
     sequencia += 1
     const texto =
@@ -46,11 +48,13 @@ export const useNotificacaoStore = defineStore('notificacao', () => {
     avisos.value = [...avisos.value, { id: sequencia, texto, tipo: 'warning', rota_id: evento.rota_id }]
   }
 
+  // @id FUN-TS-NOTIFY-003 | @categoria NOTIFY | @catalogo FUNCOES.md
   function limparAviso(id: number): void {
     avisos.value = avisos.value.filter((aviso) => aviso.id !== id)
   }
 
   // Fallback (RN027): quando o WS está indisponível, verifica alterações a cada 5 min.
+  // @id FUN-TS-NOTIFY-004 | @categoria NOTIFY | @catalogo FUNCOES.md
   async function checarAlteracoes(notificar: boolean): Promise<void> {
     try {
       const rotas = (await api.listarRotas()).items.filter((item) => item.monitorar)
@@ -75,11 +79,13 @@ export const useNotificacaoStore = defineStore('notificacao', () => {
     }
   }
 
+  // @id FUN-TS-NOTIFY-005 | @categoria NOTIFY | @catalogo FUNCOES.md
   function iniciarFallback(): void {
     if (pollTimer !== null) return
     pollTimer = window.setInterval(() => void checarAlteracoes(true), INTERVALO_POLL_MS)
   }
 
+  // @id FUN-TS-NOTIFY-006 | @categoria NOTIFY | @catalogo FUNCOES.md
   function pararFallback(): void {
     if (pollTimer !== null) {
       window.clearInterval(pollTimer)
@@ -87,6 +93,7 @@ export const useNotificacaoStore = defineStore('notificacao', () => {
     }
   }
 
+  // @id FUN-TS-NOTIFY-007 | @categoria NOTIFY | @catalogo FUNCOES.md
   function agendarReconexao(): void {
     if (reconnectTimer !== null) return
     tentativas += 1
@@ -97,6 +104,7 @@ export const useNotificacaoStore = defineStore('notificacao', () => {
     }, espera)
   }
 
+  // @id FUN-TS-NOTIFY-008 | @categoria NOTIFY | @catalogo FUNCOES.md
   function conectar(): void {
     const token = getToken()
     if (!token) return
@@ -130,6 +138,7 @@ export const useNotificacaoStore = defineStore('notificacao', () => {
     }
   }
 
+  // @id FUN-TS-NOTIFY-009 | @categoria NOTIFY | @catalogo FUNCOES.md
   function desconectar(): void {
     if (reconnectTimer !== null) {
       window.clearTimeout(reconnectTimer)

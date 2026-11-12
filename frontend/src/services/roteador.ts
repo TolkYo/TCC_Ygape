@@ -41,6 +41,7 @@ class MinHeap {
   }
 }
 
+// @id FUN-TS-ROUTE-013 | @categoria ROUTE | @catalogo FUNCOES.md
 function round(valor: number, digitos: number): number {
   return Number(valor.toFixed(digitos))
 }
@@ -50,6 +51,7 @@ function round(valor: number, digitos: number): number {
  * Mesma regra de custo/transitabilidade do backend: menor caminho por distância,
  * podando arestas com profundidade < calado + margem.
  */
+// @id FUN-TS-ROUTE-012 | @categoria ROUTE | @catalogo FUNCOES.md
 export function calcularOffline(
   snap: SnapshotGrafo,
   origemCodigo: string,

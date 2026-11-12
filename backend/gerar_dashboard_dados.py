@@ -31,6 +31,7 @@ FAIXAS_PROF = [
 ]
 
 
+# @id FUN-PY-ETL-042 | @categoria ETL | @catalogo FUNCOES.md
 def _extensao_km(blob: bytes) -> float:
     lss = _wkb_linestrings(blob)
     total = 0.0
@@ -42,6 +43,7 @@ def _extensao_km(blob: bytes) -> float:
     return total / 1000.0
 
 
+# @id FUN-PY-ETL-043 | @categoria ETL | @catalogo FUNCOES.md
 def _wkb_linestrings(data: bytes) -> list[list[tuple[float, float]]]:
     end = "<" if data[0] == 1 else ">"
     (gtype,) = struct.unpack_from(end + "I", data, 1)
@@ -64,11 +66,13 @@ def _wkb_linestrings(data: bytes) -> list[list[tuple[float, float]]]:
     return lss
 
 
+# @id FUN-PY-ETL-044 | @categoria ETL | @catalogo FUNCOES.md
 def _wkb_line(data: bytes, end: str, off: int, n: int, gtype: int) -> list[tuple[float, float]]:
     pt = 24 if gtype in (3, 13) else 16
     return [struct.unpack_from(end + "2d", data, off + i * pt) for i in range(n)]
 
 
+# @id FUN-PY-ETL-045 | @categoria ETL | @catalogo FUNCOES.md
 def _num(v):
     if v is None:
         return None
@@ -78,12 +82,14 @@ def _num(v):
         return None
 
 
+# @id FUN-PY-ETL-046 | @categoria ETL | @catalogo FUNCOES.md
 def _arred(v, d=1):
     if v is None:
         return None
     return round(float(v), d)
 
 
+# @id FUN-PY-ETL-047 | @categoria ETL | @catalogo FUNCOES.md
 def _cota_m(v):
     if v is None:
         return None
@@ -93,6 +99,7 @@ def _cota_m(v):
         return None
 
 
+# @id FUN-PY-ETL-048 | @categoria ETL | @catalogo FUNCOES.md
 def _serie_data(v):
     if not v:
         return None
@@ -102,6 +109,7 @@ def _serie_data(v):
         return None
 
 
+# @id FUN-PY-ETL-049 | @categoria ETL | @catalogo FUNCOES.md
 def _data_hora(v):
     if not v:
         return None
@@ -109,6 +117,7 @@ def _data_hora(v):
     return s.replace(".0", "").replace("T", " ")
 
 
+# @id FUN-PY-ETL-050 | @categoria ETL | @catalogo FUNCOES.md
 def resumo(con: sqlite3.Connection) -> dict:
     tabelas = [
         "estacoes", "rios", "telemetria", "cotas_historicas",
@@ -119,6 +128,7 @@ def resumo(con: sqlite3.Connection) -> dict:
     return {t: con.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0] for t in tabelas}
 
 
+# @id FUN-PY-ETL-051 | @categoria ETL | @catalogo FUNCOES.md
 def navegabilidade(con: sqlite3.Connection) -> dict:
     return {
         r[0] or "SEM DADOS": r[1]
@@ -126,6 +136,7 @@ def navegabilidade(con: sqlite3.Connection) -> dict:
     }
 
 
+# @id FUN-PY-ETL-052 | @categoria ETL | @catalogo FUNCOES.md
 def dominio(con: sqlite3.Connection) -> dict:
     return {
         r[0] or "Sem classificação": r[1]
@@ -133,6 +144,7 @@ def dominio(con: sqlite3.Connection) -> dict:
     }
 
 
+# @id FUN-PY-ETL-053 | @categoria ETL | @catalogo FUNCOES.md
 def telemetria_stats(con: sqlite3.Connection) -> dict:
     total, com_cota, com_vazao, com_chuva = con.execute(
         "SELECT COUNT(*), COUNT(cota_adotada), COUNT(vazao_adotada), COUNT(chuva_adotada) FROM telemetria"
@@ -169,6 +181,7 @@ def telemetria_stats(con: sqlite3.Connection) -> dict:
             "recencia": recencia}
 
 
+# @id FUN-PY-ETL-054 | @categoria ETL | @catalogo FUNCOES.md
 def estacoes(con: sqlite3.Connection) -> list[dict]:
     ultima = {}
     for codigo, data, cota, vazao, chuva in con.execute(
@@ -247,6 +260,7 @@ def estacoes(con: sqlite3.Connection) -> list[dict]:
     return out
 
 
+# @id FUN-PY-ETL-055 | @categoria ETL | @catalogo FUNCOES.md
 def trechos_stats(con: sqlite3.Connection) -> dict:
     faixas = {nome: {"trechos": 0, "km": 0.0} for nome, _, _ in FAIXAS_PROF}
     total_km = 0.0
@@ -287,6 +301,7 @@ def trechos_stats(con: sqlite3.Connection) -> dict:
     }
 
 
+# @id FUN-PY-ETL-056 | @categoria ETL | @catalogo FUNCOES.md
 def rios_top(con: sqlite3.Connection, limite: int = 15) -> list[dict]:
     rows = con.execute(
         "SELECT rio, COUNT(*), AVG(hig_drn_depth_m) FROM trechos_navegaveis "
@@ -299,6 +314,7 @@ def rios_top(con: sqlite3.Connection, limite: int = 15) -> list[dict]:
     ]
 
 
+# @id FUN-PY-ETL-057 | @categoria ETL | @catalogo FUNCOES.md
 def decretos(con: sqlite3.Connection, limite: int = 60) -> list[dict]:
     rows = con.execute(
         "SELECT numero, data, titulo, ementa, tipo, municipio, rio, url "
@@ -313,6 +329,7 @@ def decretos(con: sqlite3.Connection, limite: int = 60) -> list[dict]:
     ]
 
 
+# @id FUN-PY-ETL-058 | @categoria ETL | @catalogo FUNCOES.md
 def series_stats(con: sqlite3.Connection) -> dict:
     nivel_inicio = _serie_data(con.execute("SELECT MIN(data) FROM series_nivel_satelite").fetchone()[0])
     nivel_fim = _serie_data(con.execute("SELECT MAX(data) FROM series_nivel_satelite").fetchone()[0])
@@ -326,6 +343,7 @@ def series_stats(con: sqlite3.Connection) -> dict:
     }
 
 
+# @id FUN-PY-ETL-059 | @categoria ETL | @catalogo FUNCOES.md
 def main() -> None:
     ap = argparse.ArgumentParser(description="Exporta dados agregados para o dashboard")
     ap.add_argument("--out", default=DEFAULT_OUT)

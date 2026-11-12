@@ -35,6 +35,7 @@ CAMPO_BACIA = "Código da Bacia"
 VALIDADE_JWT_SEG = 3500  # token da ANA expira em ~1h
 
 
+# @id FUN-PY-COL-001 | @categoria COL | @catalogo FUNCOES.md
 def _carregar_token() -> tuple[str | None, float]:
     if ARQUIVO_TOKEN.exists():
         try:
@@ -45,6 +46,7 @@ def _carregar_token() -> tuple[str | None, float]:
     return None, 0.0
 
 
+# @id FUN-PY-COL-002 | @categoria COL | @catalogo FUNCOES.md
 def _salvar_token(token: str, expira_em: float) -> None:
     try:
         ARQUIVO_TOKEN.write_text(
@@ -57,6 +59,7 @@ def _salvar_token(token: str, expira_em: float) -> None:
 class AnaClient:
     """Cliente mínimo da API Hidro Webservice, com cache do token JWT."""
 
+    # @id FUN-PY-COL-003 | @categoria COL | @catalogo FUNCOES.md
     def __init__(
         self,
         identificador: str | None = None,
@@ -74,6 +77,7 @@ class AnaClient:
         self._token, self._token_expira_em = _carregar_token()
         self._tentativas = 6
 
+    # @id FUN-PY-COL-004 | @categoria COL | @catalogo FUNCOES.md
     def _requisitar(self, metodo: str, url: str, **kwargs) -> requests.Response:
         ultimo: requests.Response | None = None
         for tentativa in range(1, self._tentativas + 1):
@@ -96,6 +100,7 @@ class AnaClient:
             ultimo.raise_for_status()
         raise requests.ConnectionError("Falha na requisicao")
 
+    # @id FUN-PY-COL-005 | @categoria COL | @catalogo FUNCOES.md
     def _autenticar(self) -> None:
         resp = self._requisitar(
             "GET",
@@ -111,11 +116,13 @@ class AnaClient:
         self._token_expira_em = time.time() + VALIDADE_JWT_SEG
         _salvar_token(token, self._token_expira_em)
 
+    # @id FUN-PY-COL-006 | @categoria COL | @catalogo FUNCOES.md
     def _token_atual(self) -> str:
         if not self._token or time.time() >= self._token_expira_em:
             self._autenticar()
         return self._token
 
+    # @id FUN-PY-COL-007 | @categoria COL | @catalogo FUNCOES.md
     def _get(self, rota: str, params: dict | None = None) -> dict:
         headers = {"Authorization": f"Bearer {self._token_atual()}"}
         resp = self._requisitar(
@@ -130,6 +137,7 @@ class AnaClient:
             )
         return resp.json()
 
+    # @id FUN-PY-COL-008 | @categoria COL | @catalogo FUNCOES.md
     def listar_rios(
         self,
         codigo_rio: int | None = None,
@@ -146,6 +154,7 @@ class AnaClient:
         data = self._get("/EstacoesTelemetricas/HidroRio/v1", params=params)
         return data.get("items") or []
 
+    # @id FUN-PY-COL-009 | @categoria COL | @catalogo FUNCOES.md
     def listar_estacoes(
         self,
         codigo_estacao: int | None = None,
@@ -171,6 +180,7 @@ class AnaClient:
         return data.get("items") or []
 
 
+# @id FUN-PY-COL-010 | @categoria COL | @catalogo FUNCOES.md
 def normalizar_rio(rio: dict) -> dict:
     return {
         "codigo_rio": rio.get("codigorio"),
@@ -182,6 +192,7 @@ def normalizar_rio(rio: dict) -> dict:
     }
 
 
+# @id FUN-PY-COL-011 | @categoria COL | @catalogo FUNCOES.md
 def salvar_csv(rios: list[dict], caminho: str) -> None:
     with open(caminho, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=list(normalizar_rio(rios[0]).keys()))
@@ -189,6 +200,7 @@ def salvar_csv(rios: list[dict], caminho: str) -> None:
         writer.writerows(normalizar_rio(r) for r in rios)
 
 
+# @id FUN-PY-COL-012 | @categoria COL | @catalogo FUNCOES.md
 def main() -> None:
     parser = argparse.ArgumentParser(description="Coletor da API Hidro Webservice (ANA)")
     parser.add_argument("--csv", help="Salva o catálogo de rios em um arquivo CSV")

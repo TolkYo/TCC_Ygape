@@ -19,17 +19,20 @@ RAIZ = Path(__file__).resolve().parent.parent
 CSV_ESTACOES = RAIZ / "estacoes_am.csv"
 
 
+# @id FUN-PY-COL-061 | @categoria COL | @catalogo FUNCOES.md
 def normalizar_codigo(codigo: str | None) -> str:
     if not codigo:
         return ""
     return str(codigo).strip().lstrip("0")
 
 
+# @id FUN-PY-COL-062 | @categoria COL | @catalogo FUNCOES.md
 def carregar_csv(caminho: Path) -> list[dict]:
     with open(caminho, encoding="utf-8-sig") as f:
         return list(csv.DictReader(f, delimiter=";"))
 
 
+# @id FUN-PY-COL-063 | @categoria COL | @catalogo FUNCOES.md
 def salvar_csv(linhas: list[dict], caminho: Path) -> None:
     campos = list(linhas[0].keys())
     with open(caminho, "w", newline="", encoding="utf-8-sig") as f:
@@ -38,6 +41,7 @@ def salvar_csv(linhas: list[dict], caminho: Path) -> None:
         writer.writerows(linhas)
 
 
+# @id FUN-PY-COL-064 | @categoria COL | @catalogo FUNCOES.md
 def main() -> None:
     parser = argparse.ArgumentParser(description="Valida estacoes AM na base da ANA")
     parser.add_argument("--relatorio", help="Salva relatorio detalhado em arquivo")

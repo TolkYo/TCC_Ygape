@@ -17,8 +17,8 @@ const props = withDefaults(
 
 const emit = defineEmits<{ selecionarEstacao: [Estacao] }>()
 
-const COR_OK = '#1a7f4b'
-const COR_ALERTA = '#b7791f'
+const COR_OK = '#2f6b5f'
+const COR_ALERTA = '#b49567'
 const COR_DESCONHECIDO = '#6b7280'
 
 const container = ref<HTMLDivElement | null>(null)
@@ -26,6 +26,7 @@ let map: L.Map | null = null
 let estacoesLayer: L.LayerGroup | null = null
 let rotaLayer: L.GeoJSON | null = null
 
+// @id FUN-TS-UI-010 | @categoria UI | @catalogo FUNCOES.md
 function corEstacao(estacao: Estacao): string {
   if (estacao.nivel_atual_cm === null) {
     return COR_DESCONHECIDO
@@ -37,6 +38,7 @@ function corEstacao(estacao: Estacao): string {
   return nivelMetros <= estacao.cota_minima_historica_m + 0.5 ? COR_ALERTA : COR_OK
 }
 
+// @id FUN-TS-UI-011 | @categoria UI | @catalogo FUNCOES.md
 function criarPopup(estacao: Estacao): HTMLElement {
   const div = document.createElement('div')
   const titulo = document.createElement('strong')
@@ -60,6 +62,7 @@ function criarPopup(estacao: Estacao): HTMLElement {
   return div
 }
 
+// @id FUN-TS-UI-012 | @categoria UI | @catalogo FUNCOES.md
 function renderizarEstacoes(): void {
   if (!map) return
   if (estacoesLayer) {
@@ -82,6 +85,7 @@ function renderizarEstacoes(): void {
   }
 }
 
+// @id FUN-TS-UI-013 | @categoria UI | @catalogo FUNCOES.md
 function renderizarRota(): void {
   if (!map) return
   if (rotaLayer) {
@@ -93,7 +97,7 @@ function renderizarRota(): void {
   }
 
   rotaLayer = L.geoJSON(props.rota.geojson as unknown as FeatureCollection, {
-    style: { color: '#0b6bcb', weight: 4, opacity: 0.9 },
+    style: { color: '#19535f', weight: 4, opacity: 0.9 },
   }).addTo(map)
 
   const bounds = rotaLayer.getBounds()
@@ -138,6 +142,16 @@ defineExpose({
       if (bounds.isValid()) {
         map.fitBounds(bounds, { padding: [30, 30] })
       }
+    }
+  },
+  // @id FUN-TS-UI-035 | @categoria UI | @catalogo FUNCOES.md
+  redimensionar(): void {
+    map?.invalidateSize()
+  },
+  // @id FUN-TS-UI-036 | @categoria UI | @catalogo FUNCOES.md
+  centralizar(lat: number, lng: number, zoom = 7): void {
+    if (map) {
+      map.setView([lat, lng], Math.max(map.getZoom(), zoom))
     }
   },
 })

@@ -29,6 +29,7 @@ SAIDA = BACKEND / "estacoes_am_navegabilidade.csv"
 LIMIAR = 50.0  # cm de folga em relacao a cota minima historica
 
 
+# @id FUN-PY-NAV-001 | @categoria NAV | @catalogo FUNCOES.md
 def carregar_csv(caminho: Path) -> list[dict]:
     if not caminho.exists():
         return []
@@ -36,6 +37,7 @@ def carregar_csv(caminho: Path) -> list[dict]:
         return list(csv.DictReader(f, delimiter=";"))
 
 
+# @id FUN-PY-NAV-002 | @categoria NAV | @catalogo FUNCOES.md
 def flutua(valor) -> float | None:
     try:
         return float(valor)
@@ -43,6 +45,7 @@ def flutua(valor) -> float | None:
         return None
 
 
+# @id FUN-PY-NAV-003 | @categoria NAV | @catalogo FUNCOES.md
 def estatisticas_telemetria() -> dict[str, dict]:
     """Por estacao: cota_atual (leitura mais recente) e cota_minima acumulada."""
     result: dict[str, dict] = {}
@@ -61,6 +64,7 @@ def estatisticas_telemetria() -> dict[str, dict]:
     return result
 
 
+# @id FUN-PY-NAV-004 | @categoria NAV | @catalogo FUNCOES.md
 def classificacao(cota_atual: float | None, cota_minima: float | None, limiar: float) -> str:
     if cota_atual is None or cota_minima is None:
         return "SEM DADOS"
@@ -72,6 +76,7 @@ def classificacao(cota_atual: float | None, cota_minima: float | None, limiar: f
     return "CRITICO"
 
 
+# @id FUN-PY-NAV-005 | @categoria NAV | @catalogo FUNCOES.md
 def main() -> None:
     parser = argparse.ArgumentParser(description="Gera CSV de navegabilidade")
     parser.add_argument("--limiar", type=float, default=LIMIAR, help="Folga em cm (default 50)")

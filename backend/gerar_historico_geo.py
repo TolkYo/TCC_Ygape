@@ -57,6 +57,7 @@ LIMIARES = (0.25, 0.75)
 CALADO_POR_RIO = {"AMAZONAS": 10.0, "SOLIMOES": 6.0, "MADEIRA": 13.0, "NEGRO": 0.0}
 
 
+# @id FUN-PY-ETL-060 | @categoria ETL | @catalogo FUNCOES.md
 def normalizar_nome(nome: str | None) -> str:
     if not nome:
         return ""
@@ -64,6 +65,7 @@ def normalizar_nome(nome: str | None) -> str:
     return "".join(c for c in s if not unicodedata.combining(c)).upper()
 
 
+# @id FUN-PY-ETL-061 | @categoria ETL | @catalogo FUNCOES.md
 def calado_de_rio(nome_rio: str | None, largura_m: float | None,
                   longitude: float | None = None) -> float:
     """Calado de referência do trecho.
@@ -91,6 +93,7 @@ def calado_de_rio(nome_rio: str | None, largura_m: float | None,
     return 6.0
 
 
+# @id FUN-PY-ETL-062 | @categoria ETL | @catalogo FUNCOES.md
 def carregar_estacoes() -> list[dict]:
     with open(CSV_ESTACOES, encoding="utf-8-sig") as f:
         reader = csv.DictReader(f, delimiter=";")
@@ -109,6 +112,7 @@ def carregar_estacoes() -> list[dict]:
         ]
 
 
+# @id FUN-PY-ETL-063 | @categoria ETL | @catalogo FUNCOES.md
 def carregar_trechos() -> dict:
     """Trechos navegáveis + cota de fundo (SICFLOW/AHGN) por fid, do hidrowize.db."""
     con = sqlite3.connect(DB)
@@ -135,6 +139,7 @@ def carregar_trechos() -> dict:
     }
 
 
+# @id FUN-PY-ETL-064 | @categoria ETL | @catalogo FUNCOES.md
 def associar_trecho(estacoes: list[dict], raio_m: float, trechos: dict) -> dict[str, dict]:
     """Trecho navegável mais próximo de cada estação (largura, cota_fundo, rio)."""
     from shapely import STRtree, points
@@ -159,6 +164,7 @@ def associar_trecho(estacoes: list[dict], raio_m: float, trechos: dict) -> dict[
     return resultado
 
 
+# @id FUN-PY-ETL-065 | @categoria ETL | @catalogo FUNCOES.md
 def classificar_navegabilidade(prof: float, calado: float) -> str:
     if prof < calado:
         return "CRITICO"
@@ -167,6 +173,7 @@ def classificar_navegabilidade(prof: float, calado: float) -> str:
     return "NAVEGAVEL"
 
 
+# @id FUN-PY-ETL-066 | @categoria ETL | @catalogo FUNCOES.md
 def ler_series() -> tuple[dict[str, list[float]], dict[str, dict[str, float]]]:
     """Retorna (niveis_por_estacao, media_mensal_por_estacao)."""
     niveis: dict[str, list[float]] = defaultdict(list)
@@ -190,6 +197,7 @@ def ler_series() -> tuple[dict[str, list[float]], dict[str, dict[str, float]]]:
     return niveis, medias
 
 
+# @id FUN-PY-ETL-067 | @categoria ETL | @catalogo FUNCOES.md
 def classificar(nivel: float, p25: float, p75: float) -> str:
     if nivel < p25:
         return "VAZANTE"
@@ -198,6 +206,7 @@ def classificar(nivel: float, p25: float, p75: float) -> str:
     return "NORMAL"
 
 
+# @id FUN-PY-ETL-068 | @categoria ETL | @catalogo FUNCOES.md
 def gerar(features_out, estacoes, trechos_assoc, niveis, medias) -> None:
     todas_meses = sorted({mes for m in medias.values() for mes in m})
     for est in estacoes:
@@ -251,6 +260,7 @@ def gerar(features_out, estacoes, trechos_assoc, niveis, medias) -> None:
     return todas_meses
 
 
+# @id FUN-PY-ETL-069 | @categoria ETL | @catalogo FUNCOES.md
 def salvar(features, meses, saida: Path) -> None:
     payload = {
         "meses": meses,
@@ -269,6 +279,7 @@ def salvar(features, meses, saida: Path) -> None:
     print(f"Escrito {saida} ({saida.stat().st_size / 1e6:.1f} MB)")
 
 
+# @id FUN-PY-ETL-070 | @categoria ETL | @catalogo FUNCOES.md
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--raio-m", type=float, default=RAIO_M_DEFAULT,

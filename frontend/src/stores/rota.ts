@@ -9,6 +9,7 @@ import { useEstacoesStore } from '@/stores/estacoes'
 import { useOfflineStore } from '@/stores/offline'
 import type { AlteracaoRota, MonitorResultado, RotaSalva, RouteRequest, RouteResult, SalvarRotaInput } from '@/types/api'
 
+// @id FUN-TS-ROUTE-001 | @categoria ROUTE | @catalogo FUNCOES.md
 function mensagemErro(erro: unknown, padrao: string): string {
   return erro instanceof ApiProblem ? erro.message : padrao
 }
@@ -34,6 +35,7 @@ export const useRotaStore = defineStore('rota', () => {
   const erroHistorico = ref<string | null>(null)
   const historicoDoCache = ref(false)
 
+  // @id FUN-TS-ROUTE-002 | @categoria ROUTE | @catalogo FUNCOES.md
   function montarPayload(r: RouteResult): SalvarRotaInput {
     return {
       origem_nome: parametros.value.origem_nome,
@@ -51,6 +53,7 @@ export const useRotaStore = defineStore('rota', () => {
     }
   }
 
+  // @id FUN-TS-ROUTE-003 | @categoria ROUTE | @catalogo FUNCOES.md
   async function calcularOfflineSePossivel(): Promise<RouteResult | null> {
     const snap = await lerSnapshot()
     if (!snap) return null
@@ -69,6 +72,7 @@ export const useRotaStore = defineStore('rota', () => {
     )
   }
 
+  // @id FUN-TS-ROUTE-004 | @categoria ROUTE | @catalogo FUNCOES.md
   async function calcular(): Promise<void> {
     calculando.value = true
     erro.value = null
@@ -93,6 +97,7 @@ export const useRotaStore = defineStore('rota', () => {
     }
   }
 
+  // @id FUN-TS-ROUTE-005 | @categoria ROUTE | @catalogo FUNCOES.md
   async function salvar(): Promise<RotaSalva | null> {
     if (!resultado.value) {
       return null
@@ -119,6 +124,7 @@ export const useRotaStore = defineStore('rota', () => {
     }
   }
 
+  // @id FUN-TS-ROUTE-006 | @categoria ROUTE | @catalogo FUNCOES.md
   async function carregarHistorico(): Promise<void> {
     carregandoHistorico.value = true
     erroHistorico.value = null
@@ -139,6 +145,7 @@ export const useRotaStore = defineStore('rota', () => {
     }
   }
 
+  // @id FUN-TS-ROUTE-007 | @categoria ROUTE | @catalogo FUNCOES.md
   async function remover(id: number): Promise<boolean> {
     try {
       await api.removerRota(id)
@@ -150,6 +157,7 @@ export const useRotaStore = defineStore('rota', () => {
     }
   }
 
+  // @id FUN-TS-ROUTE-008 | @categoria ROUTE | @catalogo FUNCOES.md
   async function monitorar(id: number, valor: boolean): Promise<MonitorResultado | null> {
     try {
       const resultado = await api.monitorarRota(id, valor)
@@ -164,6 +172,7 @@ export const useRotaStore = defineStore('rota', () => {
     }
   }
 
+  // @id FUN-TS-ROUTE-009 | @categoria ROUTE | @catalogo FUNCOES.md
   async function alteracoes(id: number): Promise<AlteracaoRota[]> {
     try {
       return (await api.listarAlteracoes(id)).items
@@ -173,6 +182,7 @@ export const useRotaStore = defineStore('rota', () => {
     }
   }
 
+  // @id FUN-TS-ROUTE-010 | @categoria ROUTE | @catalogo FUNCOES.md
   function inverter(): void {
     parametros.value = {
       ...parametros.value,
@@ -185,6 +195,7 @@ export const useRotaStore = defineStore('rota', () => {
     calculadoOffline.value = false
   }
 
+  // @id FUN-TS-ROUTE-011 | @categoria ROUTE | @catalogo FUNCOES.md
   function limpar(): void {
     resultado.value = null
     erro.value = null
