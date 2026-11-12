@@ -1,136 +1,257 @@
-# MOTO HELP — Sistema de Gestão Web para o Mercado de Serviços para Motociclistas em Manaus
+# 🌊 YGAPÉ — SISTEMA INTELIGENTE DE ROTEAMENTO FLUVIAL
 
-Plataforma web interativa desenvolvida para auxiliar motociclistas, com sistema completo de
-autenticação e gerenciamento de anúncios. Utiliza **Supabase** para autenticação e gerenciamento
-de dados em tempo real.
+Plataforma web interativa para planejamento de rotas fluviais na bacia amazônica. Calcula o
+trajeto mais rápido e seguro nos rios do Amazonas, considerando o nível do rio, o calado da
+embarcação e a margem de segurança. O sistema reúne dados hidrológicos da ANA, mapa interativo,
+autenticação de usuários e administração em uma única aplicação.
 
-- **Demonstração:** https://moto-help-1.onrender.com
-- **Vídeo de apresentação:** https://www.youtube.com/watch?v=gtCFli9_CrI
-- **Repositório:** https://github.com/GeorgeLucas1/MOTO-HELP
+Comandantes, empresas de logística fluvial e defesa civil usam o Ygapé para decidir rotas com
+segurança e previsibilidade durante a seca e a cheia.
 
-## Funcionalidades
+- **Acesso:** https://ygape.aquacode.dev.br
+- **Documentação da API:** https://ygape.aquacode.dev.br/api/v1/docs
+- **Repositório:** https://github.com/TolkYo/TCC_Ygape
 
-- Cadastro e login de usuários com Supabase Auth
-- Validação de e-mails e tratamento de erros
-- Sistema de autenticação seguro
-- Páginas dinâmicas e interativas
-- Design responsivo com CSS personalizado
-- Integração completa com Supabase (Authentication + Database)
-- Gerenciamento de sessões de usuário
-- Proteção de rotas autenticadas
-- Chat-bot de atendimento
-- Gerenciamento de anúncios
+## 📸 Capturas de Tela
 
-## Tecnologias Utilizadas
+### Tela de Login
+
+![Tela de login do Ygapé](docs/screenshots/login-desktop.png)
+
+### Mapa de estações fluviais
+
+![Mapa interativo com estações monitoradas pela ANA](docs/screenshots/mapa-desktop.png)
+
+### Versão mobile
+
+<p>
+  <img src="docs/screenshots/login-mobile.png" alt="Tela de login no celular" width="260" />
+  <img src="docs/screenshots/mapa-mobile.png" alt="Mapa de estações no celular" width="260" />
+</p>
+
+## ✅ Funcionalidades
+
+- ✅ Autenticação de usuários com login e token JWT
+- ✅ Controle de sessão, perfis de acesso e proteção de rotas
+- ✅ Gerenciamento de usuários e permissões
+- ✅ Mapa interativo com estações fluviais monitoradas pela ANA
+- ✅ Consulta de nível atual, mínima histórica e situação de cada estação
+- ✅ Cálculo de rotas fluviais por nível do rio, calado e margem de segurança
+- ✅ Histórico de rotas e monitoramento de alterações
+- ✅ Coleta e atualização de dados hidrológicos
+- ✅ Administração de usuários, coletas e logs
+- ✅ Funcionamento offline com cache local e sincronização
+- ✅ Notificações em tempo real via WebSocket
+- ✅ Design responsivo com a identidade visual Ygapé
+- ✅ API documentada com FastAPI e Swagger
+
+## 🧩 Estrutura do Projeto
+
+```text
+TCC-Ygape/
+├── backend/                    # API FastAPI, roteamento e coletores
+│   ├── main.py                 # Aplicação, endpoints e WebSocket
+│   ├── db.py                   # Conexão PostgreSQL/PostGIS
+│   ├── routing_engine.py       # Motor de cálculo de rotas
+│   ├── carregar_postgis.py     # ETL SQLite -> PostGIS
+│   └── coletar_*.py            # Coletores de dados da ANA
+├── frontend/                   # Aplicação Vue 3 + Vite + TypeScript
+│   ├── public/
+│   │   ├── brand/              # Logos e ícone da marca
+│   │   └── fonts/              # Poppins e Akko Pro
+│   └── src/
+│       ├── views/              # Login, mapa, rotas e administração
+│       ├── components/         # Mapa, botões e badges
+│       ├── stores/             # Estado com Pinia
+│       ├── services/           # HTTP, cache e roteamento
+│       └── layouts/            # Layout principal
+├── data/                       # Bases SQLite geradas pela coleta
+├── deploy/swarm/               # Stack Docker Swarm + Traefik + nginx
+├── docs/                       # Especificações, diagramas e relatórios
+├── .env.example                # Modelo de variáveis de ambiente
+└── README.md                   # Este arquivo
+```
+
+## 🛠 Tecnologias Utilizadas
 
 | Tecnologia | Descrição |
 | --- | --- |
-| HTML5 | Estrutura das páginas |
-| CSS3 | Estilização e responsividade |
-| JavaScript (ES6+) | Lógica e interatividade |
-| Supabase | Backend as a Service (Authentication + Database) |
+| Python 3.14 + FastAPI | API REST, autenticação e WebSocket |
+| PostgreSQL 16 + PostGIS 3.4 | Banco geoespacial da aplicação e dos dados hidrológicos |
+| Vue 3 + TypeScript | Interface web reativa e tipada |
+| Vite | Desenvolvimento e build do frontend |
+| Tailwind CSS 4 | Estilização e responsividade |
+| Leaflet | Mapa interativo das estações fluviais |
+| Pinia + Vue Router | Gerenciamento de estado e navegação |
+| IndexedDB (Dexie) | Cache local e funcionamento offline |
+| Vitest | Testes automatizados do frontend |
+| Docker Swarm + Traefik + nginx | Publicação em produção |
 
-Distribuição das linguagens no repositório: JavaScript 41,6%, CSS 29,0%, HTML 21,3%, EJS 7,5%, Nix 0,6%.
+## ⚙ Pré-requisitos
 
-## Capturas de Tela
-
-- Tela Inicial
-- Tela de Login e Tela de Cadastro
-- Portal Principal e Menu de Navegação
-- Chat-bot
-- Gerenciar Anúncios
-
-## Estrutura do Projeto
-
-```text
-MOTO-HELP/
-├── public/
-│   └── assets/              # Recursos estáticos (imagens, ícones)
-├── home/
-│   ├── index.html           # Página inicial
-│   ├── script.js            # Scripts da página inicial
-│   ├── styles.css           # Estilos da página inicial
-│   └── gemini-config.js     # Configurações adicionais
-├── login/
-│   ├── index.html           # Página de login
-│   ├── script.js            # Lógica de autenticação
-│   └── styles.css           # Estilos da tela de login
-├── config/                  # Configurações da aplicação
-├── controllers/             # Controladores
-├── models/                  # Modelos de dados
-├── routes/                  # Gerenciamento de rotas
-├── views/                   # Views adicionais
-├── index.js                 # Entrada do servidor
-├── package.json             # Dependências e scripts
-├── GEMINI.md                # Instruções do workspace
-├── .env                     # Variáveis de ambiente (não versionado)
-└── README.md                # Este arquivo
-```
-
-## Pré-requisitos
-
+- Python 3.14
+- Node.js 24 (ou compatível)
+- Acesso ao PostgreSQL/PostGIS da aplicação
+- Chave SSH para o túnel do banco (ambiente local)
 - Navegador web moderno
-- Conta no Supabase
 - Editor de código (recomendado: VS Code)
-- Node.js instalado (opcional, para servidor local)
 
-## Configuração
+## ⚙ Configuração
 
-1. Crie o projeto no [Supabase](https://supabase.com) e configure as tabelas necessárias no
-   Supabase Dashboard.
-2. Obtenha a URL do projeto e a chave anônima (anon key) em **Project Settings → API**.
-3. Preencha o arquivo `.env` (não versionado) com as credenciais do Supabase.
+1. Clone o repositório:
 
-## Como Executar o Projeto
+   ```powershell
+   git clone https://github.com/TolkYo/TCC_Ygape.git
+   cd TCC_Ygape
+   ```
 
-### Opção 1: Diretamente no Navegador
+2. Crie o ambiente virtual e instale as dependências:
 
-```bash
-# Clone o repositório
-git clone https://github.com/GeorgeLucas1/MOTO-HELP
+   ```powershell
+   python -m venv .venv
+   .\.venv\Scripts\python.exe -m pip install -r backend\requirements.txt
+   ```
 
-# Navegue até a pasta
-cd moto-help
+3. Crie o `.env` a partir do modelo e preencha as credenciais do banco:
 
-# Abra o arquivo index.html no navegador
+   ```powershell
+   Copy-Item .env.example .env
+   ```
+
+   O backend usa **PostgreSQL/PostGIS**. A base `data/hidrowize.db` é usada pelos coletores e
+   alimenta o PostGIS pelo ETL `backend/carregar_postgis.py`; a API não lê SQLite diretamente.
+
+4. Gere o segredo de autenticação e preencha `HIDROWIZE_TOKEN_SECRET`:
+
+   ```powershell
+   python -c "import secrets; print(secrets.token_urlsafe(48))"
+   ```
+
+5. Crie o primeiro acesso administrativo, a partir de `backend`:
+
+   ```powershell
+   cd backend
+   ..\.venv\Scripts\python.exe criar_admin.py --nome "Administrador" --email admin@ygape.local
+   ```
+
+## 🚦 Como Executar o Projeto
+
+### Opção 1: Ambiente completo (API + frontend)
+
+1. Abra o túnel SSH para o banco da VPS (o IP está no `.env`):
+
+   ```powershell
+   ssh -L 5432:127.0.0.1:5432 root@<IP_DA_VPS>
+   ```
+
+2. Em outro terminal, suba a API a partir de `backend`:
+
+   ```powershell
+   cd backend
+   ..\.venv\Scripts\python.exe -m uvicorn main:app --reload
+   ```
+
+3. Em um terceiro terminal, suba o frontend:
+
+   ```powershell
+   cd frontend
+   npm install
+   Copy-Item .env.example .env
+   npm run dev
+   ```
+
+4. Acesse **http://localhost:5173**. A API estará em
+   **http://localhost:8000/api/v1/docs**.
+
+### Opção 2: Somente o frontend
+
+Com uma API acessível (local ou publicada), configure `VITE_API_BASE_URL` em `frontend/.env`:
+
+```powershell
+cd frontend
+npm install
+Copy-Item .env.example .env
+npm run dev
 ```
 
-### Opção 2: Com Servidor Local
+Comandos úteis: `npm run build`, `npm run typecheck`, `npm run lint` e `npm run test:run`.
 
-```bash
-# Clone o repositório
-git clone https://github.com/GeorgeLucas1/MOTO-HELP
-
-# Navegue até a pasta
-cd moto-help
-
-# Inicie um servidor local (Python)
-python -m http.server 8000
-
-# Ou usando Node.js com live-server
-npx live-server
-```
-
-Acesse **http://localhost:8000** no navegador.
-
-## Funcionalidades Detalhadas
+## 📋 Funcionalidades Detalhadas
 
 ### Autenticação
 
-- Cadastro de novos usuários com validação de e-mail
-- Login seguro com Supabase Auth
-- Logout e gerenciamento de sessão
-- Proteção de rotas autenticadas
+- Login com e-mail e senha e emissão de token JWT
+- Restauração de sessão e logout
+- Perfis de acesso (piloto e administrador)
+- Proteção de rotas autenticadas no frontend e na API
 
-### Anúncios
+### Mapa e estações
 
-- Criação e gerenciamento de anúncios pelos usuários autenticados
-- Integração com o banco de dados Supabase em tempo real
+- Mapa interativo com as estações fluviais monitoradas pela ANA
+- Busca por nome da estação, rio ou município
+- Exibição do nível atual, mínima histórica e situação da estação
+- Indicação visual de estações em atenção ou sem dados
 
-## Deploy
+### Rotas
 
-O projeto está publicado no Render em **https://moto-help-1.onrender.com**.
+- Cálculo de rota considerando nível do rio, calado e margem de segurança
+- Estimativa de distância e tempo pela velocidade da embarcação
+- Visualização do trajeto no mapa
+- Histórico de rotas calculadas
+- Monitoramento de alterações e avisos em tempo real
 
-## Autor
+### Administração
 
-George Lucas — [GitHub](https://github.com/GeorgeLucas1)
+- Gerenciamento de usuários e permissões
+- Execução e acompanhamento de coletas de dados
+- Consulta de logs da aplicação
+
+### Offline e sincronização
+
+- Cache local de estações e rotas
+- Sincronização quando a conexão é restabelecida
+- Notificações via WebSocket e indicador de estado online/offline
+
+## 🚀 Publicação
+
+O frontend está publicado em **https://ygape.aquacode.dev.br** pela stack `ygape-app` (nginx),
+que serve o build estático e encaminha `/api/` para a API. A API e o banco ficam na stack
+`ygape`, sem exposição pública.
+
+```powershell
+# 1. Build do frontend (API_BASE_URL relativo: /api/v1)
+cd frontend
+npm run build
+
+# 2. Empacotar o build
+tar -C dist -czf "$env:TEMP\ygape-dist.tar.gz" .
+
+# 3. Enviar o pacote para a VPS
+scp "$env:TEMP\ygape-dist.tar.gz" root@<IP_DA_VPS>:/tmp/ygape-dist.tar.gz
+```
+
+Na VPS, extraia em uma pasta temporária e sincronize o conteúdo sem reiniciar a stack:
+
+```bash
+rm -rf /tmp/ygape-web-new
+mkdir -p /tmp/ygape-web-new
+tar -xzf /tmp/ygape-dist.tar.gz -C /tmp/ygape-web-new
+rsync -a --delete /tmp/ygape-web-new/ /opt/ygape/web/
+rm -rf /tmp/ygape-web-new /tmp/ygape-dist.tar.gz
+```
+
+O conteúdo de `/opt/ygape/web` é servido por bind mount, portanto atualizações de frontend não
+exigem redeploy. Recomenda-se gerar um backup do diretório antes da sincronização. Se o arquivo
+`deploy/swarm/web-nginx.conf` mudar, envie-o para `/opt/ygape/nginx.conf` e recarregue o serviço
+`ygape-app_web`. Modelos: `deploy/swarm/ygape.yml.example` (DB + API) e
+`deploy/swarm/ygape-app.yml` (nginx + Traefik). O arquivo com segredos (`ygape.yml`) fica apenas
+na VPS.
+
+```bash
+docker stack deploy -c ygape-app.yml ygape-app   # site
+docker stack deploy -c ygape.yml ygape           # DB + API
+```
+
+## 👤 Autor
+
+[TolkYo](https://github.com/TolkYo)
