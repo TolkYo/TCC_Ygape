@@ -16,17 +16,17 @@ segurança e previsibilidade durante a seca e a cheia.
 
 ### Tela de Login
 
-![Tela de login do Ygapé](docs/screenshots/login-desktop.png)
+![Tela de login do Ygapé](docs/screenshots/login-desktop-v2.png)
 
 ### Mapa de estações fluviais
 
-![Mapa interativo com estações monitoradas pela ANA](docs/screenshots/mapa-desktop.png)
+![Mapa interativo com estações monitoradas pela ANA](docs/screenshots/mapa-desktop-v2.png)
 
 ### Versão mobile
 
 <p>
-  <img src="docs/screenshots/login-mobile.png" alt="Tela de login no celular" width="260" />
-  <img src="docs/screenshots/mapa-mobile.png" alt="Mapa de estações no celular" width="260" />
+  <img src="docs/screenshots/login-mobile-v2.png" alt="Tela de login no celular" width="260" />
+  <img src="docs/screenshots/mapa-mobile-v2.png" alt="Mapa de estações no celular" width="260" />
 </p>
 
 ## ✅ Funcionalidades
